@@ -27,16 +27,108 @@ from . import (
 NOTE_ACTIONS = ("add", "list", "rm", "section", "sections", "promote", "import", "counts")
 
 
+USAGE_EXAMPLES = {
+    "will": [
+        'will note "buy cat food"                 capture a line',
+        "will done morning-operator               tick a routine",
+        "will skill coding +1                     count a skill day",
+        'will task add "call the vet" --state doing',
+        "will content board                       the contentflow engine",
+        "will export                              rebuild the render models",
+    ],
+    "note": [
+        'will note "buy cat food"                       capture one line (Inbox)',
+        'will note "bit about uber drivers" --section Bits',
+        "will note list [--section Bits]                 ids, for rm and promote",
+        "will note promote 7 --lane moc --kind vlog      a line becomes a content card",
+        "will note sections                              sections and line counts",
+        "will note rm 7",
+        "will note import rows.json --replace            one-time import of old rows",
+    ],
+    "routine": [
+        "will routine                                    what I owe, with streaks",
+        'will routine add "Gym"',
+        "will routine rm gym",
+        "will done morning-operator                      the tick command lives in `will done`",
+    ],
+    "done": [
+        "will done morning-operator                      tick it for today",
+        "will done job-hunting --day 2026-09-20          backfill a day",
+        "will routine                                    see every routine and its streak",
+    ],
+    "undo": [
+        "will undo morning-operator                      clear today's tick",
+        "will undo morning-operator --day 2026-09-20",
+    ],
+    "skill": [
+        "will skill coding +2                            count two on today",
+        "will skill coding                               +1, shorthand",
+        "will skill list                                 today, total, streak, month",
+        'will skill add cooking "Cooking"                a new skill',
+    ],
+    "task": [
+        'will task add "swap the tui widgets" --state doing',
+        "will task                                       grouped by state (todo first)",
+        "will task --state done",
+        "will task doing 4                               shorthand for move",
+        "will task move 4 blocked",
+        "will task rm 4",
+    ],
+    "plan": [
+        'will plan add "finish willOS" --start 2026-09-24 --end 2026-09-30 --note "one window at a time"',
+        'will plan add "week off" --start 2026-10-05     end defaults to start',
+        "will plan                                       current, upcoming and past",
+        "will plan rm 1",
+    ],
+    "fin": [
+        'will fin add "149,90" --kind expense --category course --note "guia do comediante"',
+        "will fin add 1500 --kind income --note gig",
+        'will fin add "12,50" --date 2026-09-01          log for another day',
+        "will fin list                                   this month: totals, categories, recents",
+        "will fin list --month 2026-08",
+        "will fin rm 2",
+    ],
+    "import": [
+        "will import legacy.json                         routes every old Supabase table",
+        "will import legacy.json --replace               wipe the stores first",
+        "will import notes-export.json                   a bare notes rows array also works",
+    ],
+    "content": [
+        "will content board                              active cards grouped by lane",
+        "will content lane teacher                       one lane's stages and cards",
+        "will content next 1                             advance a card one step",
+        "will content show 7                             one card and its next step",
+    ],
+    "export": [
+        "will export                                     every render model",
+        "will export notes finance                       just those two",
+        "will export                                     (auto-runs after every write command)",
+    ],
+    "where": [
+        "will where                                      store dir + data dir",
+    ],
+}
+
+
+def with_examples(parser: argparse.ArgumentParser, key: str, description: str = "") -> argparse.ArgumentParser:
+    """Every command carries the handful of uses worth remembering."""
+    parser.description = description or parser.description
+    parser.epilog = "common uses:\n" + "\n".join(f"  {line}" for line in USAGE_EXAMPLES[key])
+    parser.formatter_class = argparse.RawDescriptionHelpFormatter
+    return parser
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="will",
         description="willOS CLI: the terminal writes, the desktop draws.",
-        epilog='Shortcuts: will note "text" | will done morning-operator | will skill coding',
     )
     sub = parser.add_subparsers(dest="command")
 
-    note = sub.add_parser("note", help="the notebook: capture, list, remove, promote")
-    note.add_argument("action", nargs="?", help="add (default) | list | rm | section | sections | promote")
+    note = sub.add_parser("note", help="the notebook: capture, list, remove, promote",
+                   formatter_class=argparse.RawDescriptionHelpFormatter)
+    with_examples(note, "note", "the notebook: capture, list, remove, promote")
+    note.add_argument("action", nargs="?", help="add (default) | list | rm | section | sections | promote | import")
     note.add_argument("args", nargs="*", help="text to add, section name, or note id")
     note.add_argument("--section", "-s", default=notes.DEFAULT_SECTION, help="section to write to or read")
     note.add_argument("--lane", default="", help="lane for promote (moc, teacher, standup, comics, freela)")
@@ -44,38 +136,52 @@ def build_parser() -> argparse.ArgumentParser:
     note.add_argument("--title", default="", help="override the promoted card title")
     note.add_argument("--replace", action="store_true", help="import: replace the store instead of appending")
 
-    routine_cmd = sub.add_parser("routine", help="routines (the old Dailies): list, add, rm")
+    routine_cmd = sub.add_parser("routine", help="routines (the old Dailies): list, add, rm",
+                   formatter_class=argparse.RawDescriptionHelpFormatter)
+    with_examples(routine_cmd, "routine", "routines (the old Dailies): list, add, rm")
     routine_cmd.add_argument("action", nargs="?", default="list", help="list (default) | add | rm")
     routine_cmd.add_argument("args", nargs="*", help="label to add, or routine code to remove")
 
-    done = sub.add_parser("done", help="tick a routine for today")
+    done = sub.add_parser("done", help="tick a routine for today",
+                   formatter_class=argparse.RawDescriptionHelpFormatter)
+    with_examples(done, "done", "tick a routine for today")
     done.add_argument("code", help="routine code, e.g. morning-operator")
     done.add_argument("--day", default="", help="override the day (YYYY-MM-DD)")
 
-    undo = sub.add_parser("undo", help="untick a routine for today")
+    undo = sub.add_parser("undo", help="untick a routine for today",
+                   formatter_class=argparse.RawDescriptionHelpFormatter)
+    with_examples(undo, "undo", "untick a routine for today")
     undo.add_argument("code")
     undo.add_argument("--day", default="")
 
-    skill = sub.add_parser("skill", help="skills (the old Gamify): list, add, or bump")
+    skill = sub.add_parser("skill", help="skills (the old Gamify): list, add, or bump",
+                   formatter_class=argparse.RawDescriptionHelpFormatter)
+    with_examples(skill, "skill", "skills (the old Gamify): list, add, or bump")
     skill.add_argument("action", nargs="?", default="list", help="list (default) | add | <code>")
     skill.add_argument("args", nargs="*", help="[amount] for a bump, or code + label for add")
     skill.add_argument("--amount", type=int, default=1, help="how much to bump (default 1)")
     skill.add_argument("--day", default="")
 
-    task = sub.add_parser("task", help="tasks: the To-do list and the Kanban board")
+    task = sub.add_parser("task", help="tasks: the To-do list and the Kanban board",
+                   formatter_class=argparse.RawDescriptionHelpFormatter)
+    with_examples(task, "task", "tasks: the To-do list and the Kanban board")
     task.add_argument("action", nargs="?", default="list", help="list (default) | add | done | doing | move | rm")
     task.add_argument("args", nargs="*", help="task text, or a task id")
     task.add_argument("--state", default="", help="todo | doing | blocked | done")
     task.add_argument("--lane", default="")
 
-    plan = sub.add_parser("plan", help="planner: title, start, end, one note")
+    plan = sub.add_parser("plan", help="planner: title, start, end, one note",
+                   formatter_class=argparse.RawDescriptionHelpFormatter)
+    with_examples(plan, "plan", "planner: title, start, end, one note")
     plan.add_argument("action", nargs="?", default="list", help="list (default) | add | rm")
     plan.add_argument("args", nargs="*", help="plan title, or plan id")
     plan.add_argument("--start", default="", help="start date (YYYY-MM-DD, default today)")
     plan.add_argument("--end", default="", help="end date (default: same as start)")
     plan.add_argument("--note", default="")
 
-    fin = sub.add_parser("fin", help="finance: income and expense entries")
+    fin = sub.add_parser("fin", help="finance: income and expense entries",
+                   formatter_class=argparse.RawDescriptionHelpFormatter)
+    with_examples(fin, "fin", "finance: income and expense entries")
     fin.add_argument("action", nargs="?", default="list", help="list (default) | add | rm")
     fin.add_argument("args", nargs="*", help="amount (add) or entry id (rm)")
     fin.add_argument("--kind", default="expense", help="expense (default) | income")
@@ -84,19 +190,28 @@ def build_parser() -> argparse.ArgumentParser:
     fin.add_argument("--date", default="")
     fin.add_argument("--month", default="", help="list: YYYY-MM")
 
-    import_cmd = sub.add_parser("import", help="one-time import of the old Supabase rows (JSON)")
+    import_cmd = sub.add_parser("import", help="one-time import of the old Supabase rows (JSON)",
+                   formatter_class=argparse.RawDescriptionHelpFormatter)
+    with_examples(import_cmd, "import", "one-time import of the old Supabase rows (JSON)")
     import_cmd.add_argument("file")
     import_cmd.add_argument("--replace", action="store_true")
 
-    content_cmd = sub.add_parser("content", help="pass through to the contentflow CLI")
+    content_cmd = sub.add_parser("content", help="pass through to the contentflow CLI",
+                   formatter_class=argparse.RawDescriptionHelpFormatter)
+    with_examples(content_cmd, "content", "pass through to the contentflow CLI")
     content_cmd.add_argument("args", nargs=argparse.REMAINDER)
 
-    export = sub.add_parser("export", help="write the render models the desktop draws")
+    export = sub.add_parser("export", help="write the render models the desktop draws",
+                   formatter_class=argparse.RawDescriptionHelpFormatter)
+    with_examples(export, "export", "write the render models the desktop draws")
     export.add_argument("domains", nargs="*", help=f"default: all ({', '.join(exporter.EXPORTERS)})")
 
-    where = sub.add_parser("where", help="print the store and data directories")
+    where = sub.add_parser("where", help="print the store and data directories",
+                   formatter_class=argparse.RawDescriptionHelpFormatter)
+    with_examples(where, "where", "print the store and data directories")
     where.add_argument("args", nargs="*")
 
+    with_examples(parser, "will", "willOS CLI: the terminal writes, the desktop draws.")
     return parser
 
 
