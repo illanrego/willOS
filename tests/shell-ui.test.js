@@ -31,6 +31,12 @@ const MIGRATED_WINDOWS = [
     core: "notes-core.js",
     data: "data/notes.json",
   },
+  {
+    id: "plannerContainer",
+    script: "planner-projection.js",
+    core: "planner-projection.js",
+    data: "data/planner.json",
+  },
 ];
 
 // Comments legitimately name the things the code must not do, so scan code only.
@@ -110,7 +116,10 @@ test("every migrated window is loaded before the shell runs", () => {
   MIGRATED_WINDOWS.forEach(({ script, core }) => {
     assert.ok(html.includes(core), `${core} is not loaded`);
     assert.ok(html.includes(script), `${script} is not loaded`);
-    assert.ok(html.indexOf(core) < html.indexOf(script), `${core} must load before ${script}`);
+    if (core !== script) {
+      assert.ok(html.indexOf(core) < html.indexOf(script), `${core} must load before ${script}`);
+    }
+    assert.ok(html.includes(`${script}?`), `${script} must be cache-busted in index.html`);
     assert.ok(html.indexOf(script) < html.indexOf("willos.js"), `${script} must load before the shell`);
   });
 });

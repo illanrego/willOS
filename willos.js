@@ -1366,7 +1366,6 @@ const FEATURE_SYNC_DEFINITIONS = {
   skillsContainer: { key: "gamify", label: "Gamify" },
   dailiesContainer: { key: "tasks", label: "Tasks" },
   todoContainer: { key: "tasks", label: "Tasks" },
-  plannerContainer: { key: "planner", label: "Planner" },
   recContainer: { key: "lists", label: "Lists" },
   nextFeatures: { key: "lists", label: "Lists" },
   workoutContainer: { key: "workout", label: "Workout" },
@@ -1382,7 +1381,6 @@ const BACKEND_SYNC_ALL_CONTAINER_IDS = [
   "calendarContainer",
   "workoutContainer",
   "recContainer",
-  "plannerContainer",
   "financeContainer",
 ];
 const featureSyncState = new Map();
@@ -1442,11 +1440,6 @@ async function loadFeatureSyncGroup(key) {
   if (key === "lists") {
     await loadListsBackendState();
     renderSimpleLists();
-    return;
-  }
-  if (key === "planner") {
-    await loadPlannerBackendState();
-    renderPlanner();
     return;
   }
   if (key === "finance") {
@@ -1547,7 +1540,6 @@ async function loadBackendSession(session) {
     workoutRemoteState.loaded = false;
     if (typeof resetWorkoutV2BackendState === "function") resetWorkoutV2BackendState();
     listRemoteState.loaded = false;
-    plannerRemoteState.loaded = false;
     integrationRemoteState.loaded = false;
     setBackendAuthStatus("Backend: Supabase ready; sign in to sync modules");
     renderFinanceList();
@@ -1557,7 +1549,6 @@ async function loadBackendSession(session) {
     generateCalendar();
     renderWorkout();
     renderSimpleLists();
-    renderPlanner();
     renderConnectionsStatus();
     return;
   }
@@ -5616,7 +5607,7 @@ function hideQuadro(idQuadro) {
   const quadro = document.getElementById(`${idQuadro}`);
   if (!quadro) return;
   const opening = window.getComputedStyle(quadro).display === "none";
-  const flexQuadros = ["chatContainer", "workoutContainer", "notesContainer", "contentContainer"];
+  const flexQuadros = ["chatContainer", "workoutContainer", "notesContainer", "contentContainer", "plannerContainer"];
   quadro.style.display = opening
     ? (flexQuadros.includes(idQuadro) ? "flex" : "block")
     : "none";
@@ -8209,260 +8200,11 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 // PLANNER
-// A light horizon plan: what it is, when it runs, and one note. Lanes,
-// milestones, weekly blocks, sprints and the send-to-today bridge were dropped
-// as unused. Those columns stay dormant in planner_plans; nothing here reads
-// or writes them, and the old content was folded into the note.
-
-const PLANNER_STORAGE_KEY = "plannerState";
-const PLANNER_IMPORT_SCOPE = "planner_v1";
-const plannerRemoteState = {
-  loaded: false,
-  plan: null,
-};
-const PLANNER_SELECT_FIELDS =
-  "id, title, starts_on, ends_on, summary, status, created_at, updated_at";
-
-function plannerTodayKey() {
-  const today = new Date();
-  return trackerDateKey(today.getFullYear(), today.getMonth(), today.getDate());
-}
-
-function defaultPlannerState() {
-  return {
-    id: "",
-    title: "",
-    startsOn: plannerTodayKey(),
-    endsOn: "",
-    summary: "",
-    status: "active",
-    updatedAt: new Date().toISOString(),
-  };
-}
-
-function normalizePlannerDate(value, fallback) {
-  return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : fallback;
-}
-
-function normalizePlannerState(rawState) {
-  const fallback = defaultPlannerState();
-  const source = rawState && typeof rawState === "object" ? rawState : {};
-  return {
-    id: typeof source.id === "string" ? source.id : "",
-    title: typeof source.title === "string" ? source.title.trim() : "",
-    startsOn: normalizePlannerDate(source.startsOn || source.starts_on, fallback.startsOn),
-    endsOn: normalizePlannerDate(source.endsOn || source.ends_on, ""),
-    summary: typeof source.summary === "string" ? source.summary : "",
-    status: source.status === "archived" ? "archived" : "active",
-    updatedAt:
-      typeof source.updatedAt === "string" && source.updatedAt
-        ? source.updatedAt
-        : new Date().toISOString(),
-  };
-}
-
-function plannerValidationError(plan) {
-  if (!plan.title) return "A plan needs a title.";
-  if (!plan.startsOn || !plan.endsOn) return "A plan needs a start and an end date.";
-  if (plan.endsOn < plan.startsOn) return "The end date has to be on or after the start.";
-  return "";
-}
-
-function plannerRowToState(row) {
-  return normalizePlannerState({
-    id: row.id,
-    title: row.title,
-    startsOn: row.starts_on,
-    endsOn: row.ends_on,
-    summary: row.summary,
-    status: row.status,
-    updatedAt: row.updated_at || row.created_at,
-  });
-}
-
-function plannerStateToDbPayload(plan, userId) {
-  const normalized = normalizePlannerState(plan);
-  return {
-    user_id: userId,
-    title: normalized.title,
-    starts_on: normalized.startsOn,
-    ends_on: normalized.endsOn,
-    summary: normalized.summary,
-    status: normalized.status,
-  };
-}
-
-function isPlannerBackendActive() {
-  return Boolean(backendState.client && backendState.session && plannerRemoteState.loaded);
-}
-
-function getLocalPlannerState() {
-  let parsed = null;
-  try {
-    parsed = JSON.parse(localStorage.getItem(PLANNER_STORAGE_KEY));
-  } catch (_error) {
-    parsed = null;
-  }
-  const state = normalizePlannerState(parsed);
-  localStorage.setItem(PLANNER_STORAGE_KEY, JSON.stringify(state));
-  return state;
-}
-
-function setLocalPlannerState(plan) {
-  localStorage.setItem(PLANNER_STORAGE_KEY, JSON.stringify(normalizePlannerState(plan)));
-}
-
-function getPlannerState() {
-  return isPlannerBackendActive() && plannerRemoteState.plan
-    ? plannerRemoteState.plan
-    : getLocalPlannerState();
-}
-
-function setPlannerState(plan) {
-  const normalized = normalizePlannerState(plan);
-  if (isPlannerBackendActive()) {
-    plannerRemoteState.plan = normalized;
-    return;
-  }
-  setLocalPlannerState(normalized);
-}
-
-function readPlannerFormState() {
-  const current = getPlannerState();
-  const byId = (id) => document.getElementById(id);
-  return normalizePlannerState({
-    ...current,
-    title: byId("plannerTitleInput")?.value,
-    startsOn: byId("plannerStartInput")?.value,
-    endsOn: byId("plannerEndInput")?.value,
-    summary: byId("plannerSummaryInput")?.value,
-    updatedAt: new Date().toISOString(),
-  });
-}
-
-function setPlannerSyncStatus(message) {
-  const status = document.getElementById("plannerSyncStatus");
-  if (status) status.textContent = message;
-}
-
-function renderPlanner() {
-  const plan = getPlannerState();
-  const assign = (id, value) => {
-    const el = document.getElementById(id);
-    if (el && el.value !== value) el.value = value;
-  };
-  assign("plannerTitleInput", plan.title);
-  assign("plannerStartInput", plan.startsOn);
-  assign("plannerEndInput", plan.endsOn);
-  assign("plannerSummaryInput", plan.summary);
-}
-
-async function loadPlannerBackendState() {
-  const userId = getBackendUserId();
-  if (!backendState.client || !userId) {
-    plannerRemoteState.loaded = false;
-    return;
-  }
-
-  try {
-    let row = throwIfSupabaseError(
-      await backendState.client
-        .from("planner_plans")
-        .select(PLANNER_SELECT_FIELDS)
-        .eq("user_id", userId)
-        .eq("status", "active")
-        .order("created_at", { ascending: true })
-        .limit(1)
-        .maybeSingle(),
-    );
-
-    if (!row) {
-      row = throwIfSupabaseError(
-        await backendState.client
-          .from("planner_plans")
-          .insert(plannerStateToDbPayload(getLocalPlannerState(), userId))
-          .select(PLANNER_SELECT_FIELDS)
-          .single(),
-      );
-    }
-
-    plannerRemoteState.plan = plannerRowToState(row);
-    plannerRemoteState.loaded = true;
-  } catch (error) {
-    console.error("Planner backend load error:", error);
-    plannerRemoteState.loaded = false;
-    plannerRemoteState.plan = null;
-    setPlannerSyncStatus("Planner backend unavailable; using local plan.");
-  }
-}
-
-async function importPlannerLocalDataOnce() {
-  if (hasBackendImportCompleted(PLANNER_IMPORT_SCOPE)) return;
-  const userId = getBackendUserId();
-  if (!backendState.client || !userId) return;
-  const plan = getLocalPlannerState();
-  if (plannerValidationError(plan)) {
-    markBackendImportCompleted(PLANNER_IMPORT_SCOPE);
-    return;
-  }
-  try {
-    throwIfSupabaseError(
-      await backendState.client
-        .from("planner_plans")
-        .upsert(plannerStateToDbPayload(plan, userId), { onConflict: "user_id,status" })
-        .select("id")
-        .single(),
-    );
-    markBackendImportCompleted(PLANNER_IMPORT_SCOPE);
-  } catch (error) {
-    console.error("Planner local import error:", error);
-    plannerRemoteState.loaded = false;
-    setPlannerSyncStatus("Planner backend unavailable; local plan kept.");
-  }
-}
-
-async function savePlanner() {
-  const plan = readPlannerFormState();
-  const invalid = plannerValidationError(plan);
-  if (invalid) {
-    setPlannerSyncStatus(invalid);
-    return;
-  }
-
-  if (isPlannerBackendActive()) {
-    try {
-      const userId = getBackendUserId();
-      const row = throwIfSupabaseError(
-        await backendState.client
-          .from("planner_plans")
-          .upsert(
-            {
-              id: plan.id || undefined,
-              ...plannerStateToDbPayload(plan, userId),
-            },
-            { onConflict: plan.id ? "id" : "user_id,status" },
-          )
-          .select(PLANNER_SELECT_FIELDS)
-          .single(),
-      );
-      plannerRemoteState.plan = plannerRowToState(row);
-      setPlannerSyncStatus("Saved.");
-    } catch (error) {
-      console.error("Planner DB save error:", error);
-      setLocalPlannerState(plan);
-      plannerRemoteState.plan = plan;
-      setPlannerSyncStatus(`Save failed; kept locally: ${describeBackendError(error)}`);
-    }
-  } else {
-    setLocalPlannerState(plan);
-    setPlannerSyncStatus("Saved locally.");
-  }
-  renderPlanner();
-}
-
-document.addEventListener("DOMContentLoaded", function () {
-  renderPlanner();
-});
+// The Planner window is READ-ONLY and lives in planner-projection.js: it draws
+// data/planner.json, exported by `will export` from the will planner store.
+// The old in-page form (title, starts_on, ends_on, summary, Supabase save) was
+// removed on purpose - plans are written in the terminal:
+//   will plan add "finish the flip" --start 2026-09-24 --end 2026-09-30 --note ...
 
 // KANBAN BOARD
 const KANBAN_STORAGE_KEY = "kanbanState";

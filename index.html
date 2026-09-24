@@ -14,6 +14,7 @@
     <script src="workout-core.js?v=20260924-willos-fork" defer></script>
     <script src="notes-core.js?v=20260924-willos-fork" defer></script>
     <script src="notes-projection.js?v=20260924-notes" defer></script>
+    <script src="planner-projection.js?v=20260924-planner" defer></script>
     <script src="projection-core.js?v=20260924-willos-fork" defer></script>
     <script src="content-projection.js?v=20260924-willos-fork" defer></script>
     <script src="willos.js?v=20260924-willos-fork" defer></script>
@@ -263,26 +264,8 @@
           <button onclick="hideQuadro('plannerContainer')">x</button>
         </div>
         <div id="plannerPanel">
-          <div class="planner-status-card">
-            <div>
-              <label for="plannerTitleInput">Plan</label>
-              <input type="text" id="plannerTitleInput" placeholder="Plan title">
-            </div>
-            <div>
-              <label for="plannerStartInput">Start</label>
-              <input type="date" id="plannerStartInput">
-            </div>
-            <div>
-              <label for="plannerEndInput">End</label>
-              <input type="date" id="plannerEndInput">
-            </div>
-          </div>
-          <label for="plannerSummaryInput">Note</label>
-          <textarea id="plannerSummaryInput" rows="10" placeholder="What this horizon is about, in your own words."></textarea>
-          <div id="plannerToolbar">
-            <button id="plannerSaveBtn" type="button" onclick="savePlanner()">save</button>
-            <span id="plannerSyncStatus">Ready.</span>
-          </div>
+          <p id="plannerStatus" class="projection-status">Ready.</p>
+          <ul id="plannerList" class="projection-list"></ul>
         </div>
       </div>
 <!-- REC LIST -->

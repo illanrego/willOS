@@ -643,6 +643,85 @@
     cursor: default;
 }
 
+/* Migrated windows render a read-only projection from data/<window>.json. */
+.projection-status {
+    margin: 6px 8px;
+    font-family: "win98", sans-serif;
+    font-size: 11px;
+    color: #444;
+    text-align: left;
+}
+
+.projection-list {
+    list-style: none;
+    margin: 6px 8px 10px;
+    padding: 0;
+    text-align: left;
+    font-family: "win98", sans-serif;
+    font-size: 12px;
+    color: #111;
+}
+
+.projection-list li {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 4px 6px;
+    border-bottom: 1px solid #e2e2e2;
+}
+
+.projection-list li:last-child {
+    border-bottom: none;
+}
+
+.projection-list .projection-empty {
+    color: #666;
+    font-style: italic;
+    border-bottom: none;
+}
+
+.projection-date {
+    flex: none;
+    min-width: 92px;
+    color: #333;
+}
+
+.projection-tag {
+    flex: none;
+    padding: 0 5px;
+    border: 1px solid #bcbcbc;
+    background: #ececec;
+    border-radius: 2px;
+    font-size: 10px;
+    text-transform: lowercase;
+}
+
+.projection-tag--current {
+    background: #000080;
+    border-color: #000080;
+    color: #fff;
+}
+
+.projection-tag--upcoming {
+    background: #dfe8ff;
+    border-color: #9fb0d6;
+}
+
+.projection-tag--past {
+    background: #ededed;
+    color: #777;
+}
+
+.projection-note {
+    color: #555;
+    font-size: 11px;
+}
+
+.projection-main {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
 .content-status {
     margin: 0;
     font-family: "win98", sans-serif;
@@ -4226,14 +4305,34 @@ legend {
 
 /* Planner - title, dates and one note. Nothing else. */
 #plannerContainer {
+  display: none;
+  flex-direction: column;
   width: min(720px, 94vw);
   min-width: 420px;
-  max-height: 86vh;
+  min-height: 320px;
+  height: min(80vh, 640px);
+  max-width: 96vw;
+  max-height: 96vh;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+#plannerContainer .titleBar {
+  flex: none;
+}
+
+#plannerList {
+  flex: 1 1 auto;
+  min-height: 0;
   overflow: auto;
 }
 
 #plannerPanel {
-  padding: 10px;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
   background: #c0c0c0;
   color: #000;
   text-align: left;
