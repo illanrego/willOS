@@ -61,6 +61,12 @@ const MIGRATED_WINDOWS = [
     core: "skills-projection.js",
     data: "data/skills.json",
   },
+  {
+    id: "financeContainer",
+    script: "finance-projection.js",
+    core: "finance-projection.js",
+    data: "data/finance.json",
+  },
 ];
 
 // Comments legitimately name the things the code must not do, so scan code only.

@@ -17,6 +17,7 @@
     <script src="planner-projection.js?v=20260924-planner" defer></script>
     <script src="tasks-projection.js?v=20260924-tasks" defer></script>
     <script src="skills-projection.js?v=20260924-skills" defer></script>
+    <script src="finance-projection.js?v=20260924-finance" defer></script>
     <script src="projection-core.js?v=20260924-willos-fork" defer></script>
     <script src="content-projection.js?v=20260924-willos-fork" defer></script>
     <script src="willos.js?v=20260924-willos-fork" defer></script>
@@ -471,154 +472,13 @@
     <button onclick="hideQuadro('financeContainer')">x</button>
   </div>
   <div id="financePanel">
-    <div id="financeMonthBar">
-      <button id="financePrevMonthBtn" type="button">←</button>
-      <input type="month" id="financeMonthInput">
-      <button id="financeNextMonthBtn" type="button">→</button>
-    </div>
-    <div id="financeTabs" role="tablist" aria-label="Finance sections">
-      <button id="financeLogsTabBtn" class="finance-tab-btn finance-tab-btn--active" type="button" data-target="financeLogsSection" role="tab" aria-selected="true">Logs</button>
-      <button id="financeBudgetTabBtn" class="finance-tab-btn" type="button" data-target="financeBudgetSection" role="tab" aria-selected="false">Budget</button>
-      <button id="financeRecurringTabBtn" class="finance-tab-btn" type="button" data-target="financeRecurringSection" role="tab" aria-selected="false">Recurring</button>
-      <button id="financeSpentTabBtn" class="finance-tab-btn" type="button" data-target="financeSpentSection" role="tab" aria-selected="false">Spent</button>
-    </div>
-    <div id="financeLogsSection" class="finance-section finance-section--active" role="tabpanel">
-      <div class="finance-section-heading">quick log</div>
-      <div id="financeForm">
-        <div id="financeTypeToggle" role="group" aria-label="Log type">
-          <button id="financeExpenseTypeBtn" class="finance-type-btn finance-type-btn--active" type="button" data-finance-type="expense" aria-pressed="true">Expense</button>
-          <button id="financeIncomeTypeBtn" class="finance-type-btn" type="button" data-finance-type="income" aria-pressed="false">Income</button>
-          <select id="financeTypeInput" aria-hidden="true" tabindex="-1">
-            <option value="expense" selected>expense</option>
-            <option value="income">income</option>
-          </select>
-        </div>
-        <label class="finance-entry-field finance-amount-field" for="financeAmountInput">
-          <span>How much?</span>
-          <span class="finance-amount-input-wrap">
-            <span class="finance-currency-prefix">R$</span>
-            <input type="number" id="financeAmountInput" step="0.01" min="0.01" inputmode="decimal" placeholder="0,00">
-          </span>
-        </label>
-        <label class="finance-entry-field finance-note-field" for="financeNoteInput">
-          <span>What was it? <small>optional</small></span>
-          <input type="text" id="financeNoteInput" placeholder="e.g. groceries">
-        </label>
-        <fieldset id="financeCategoryPicker">
-          <legend>Category</legend>
-          <div id="financeCategoryChips"></div>
-          <select id="financeCategoryInput" aria-label="Selected expense category" hidden></select>
-        </fieldset>
-        <details id="financeEntryDetails">
-          <summary>Change date</summary>
-          <label for="financeDateInput">Transaction date</label>
-          <input type="date" id="financeDateInput">
-        </details>
-        <button id="financeAddBtn" type="button">Save expense</button>
-        <p id="financeEntryStatus" role="status" aria-live="polite">Expense selected. Add an amount and choose a category.</p>
-      </div>
-      <div id="financeTotals" aria-live="polite">
-        <span>income: <strong id="financeIncomeTotal">R$ 0,00</strong></span>
-        <span>expense: <strong id="financeExpenseTotal">R$ 0,00</strong></span>
-        <span>net: <strong id="financeNetTotal">R$ 0,00</strong></span>
-      </div>
-      <div class="finance-section-heading">month logs</div>
-      <ul id="financeList"></ul>
-      <details id="financeBalanceDetails">
-        <summary>Balance setup and reconciliation</summary>
-        <div id="financeBalancePanel">
-          <div id="financeBalanceControls">
-            <label for="financeOpeningDateInput">opening date</label>
-            <input type="date" id="financeOpeningDateInput">
-            <label for="financeOpeningAmountInput">opening amount</label>
-            <input type="number" id="financeOpeningAmountInput" step="0.01" placeholder="R$ 0,00">
-            <button id="financeOpeningBalanceSaveBtn" type="button">save</button>
-            <button id="financeBalanceReconcileBtn" type="button">reconcile</button>
-          </div>
-          <div id="financeBalanceSummary" aria-live="polite">
-            <span>current balance: <strong id="financeCurrentBalance">Set starting balance</strong></span>
-            <span>projected month-end balance: <strong id="financeProjectedMonthEndBalance">Set starting balance</strong></span>
-          </div>
-          <div id="financeBalanceEmptyState">Set starting balance to calculate current money across all finance logs.</div>
-        </div>
-      </details>
-    </div>
-    <div id="financeBudgetSection" class="finance-section" role="tabpanel" hidden>
-      <div id="financeBudgetPanel">
-        <div class="finance-section-heading">monthly budget</div>
-        <div id="financeBudgetControls">
-          <label for="financeMonthlyBudgetInput">monthly budget</label>
-          <input type="number" id="financeMonthlyBudgetInput" step="0.01" min="0" placeholder="R$ 0,00">
-          <button id="financeBudgetSaveBtn" type="button">save</button>
-        </div>
-        <div id="financeBudgetModeBar">
-          <span id="financeBudgetModeLabel">using default budget</span>
-          <button id="financeCopyDefaultBudgetBtn" type="button">copy default to month</button>
-          <button id="financeSaveAsDefaultBudgetBtn" type="button">save month as default</button>
-          <button id="financeResetMonthBudgetBtn" type="button">reset month</button>
-        </div>
-        <div class="finance-section-heading">categories</div>
-        <div id="financeCategoryCreateRow">
-          <input type="text" id="financeCategoryNameInput" placeholder="Category name">
-          <input type="number" id="financeCategoryAllocInput" step="0.01" min="0" placeholder="Allocation">
-          <button id="financeCategoryAddBtn" type="button">+</button>
-        </div>
-        <div id="financeBudgetSummary">
-          <span>allocated: <strong id="financeAllocatedTotal">R$ 0,00</strong></span>
-          <span>remaining: <strong id="financeRemainingBudget">R$ 0,00</strong></span>
-        </div>
-        <div id="financePartitionArea">
-          <svg id="financePartitionPie" viewBox="0 0 220 220" aria-label="Budget partitions"></svg>
-          <ul id="financePartitionLegend"></ul>
-        </div>
-        <ul id="financeCategoryList"></ul>
-      </div>
-    </div>
-    <div id="financeRecurringSection" class="finance-section" role="tabpanel" hidden>
-      <div id="financeRecurringPanel">
-        <div class="finance-section-heading">recurring income and expenses</div>
-        <div id="financeRecurringForm">
-          <select id="financeRecurringTypeInput">
-            <option value="income">income</option>
-            <option value="expense">expense</option>
-          </select>
-          <select id="financeRecurringCategoryInput"></select>
-          <input type="number" id="financeRecurringAmountInput" step="0.01" min="0" placeholder="Amount">
-          <input type="text" id="financeRecurringNoteInput" placeholder="Note">
-          <input type="number" id="financeRecurringDayInput" min="1" max="31" placeholder="Day">
-          <input type="month" id="financeRecurringStartInput">
-          <input type="month" id="financeRecurringEndInput">
-          <button id="financeRecurringAddBtn" type="button">+</button>
-        </div>
-        <ul id="financeRecurringList"></ul>
-      </div>
-    </div>
-    <div id="financeSpentSection" class="finance-section" role="tabpanel" hidden>
-      <div id="financeSpentPanel">
-        <div class="finance-section-heading">spent breakdown</div>
-        <div id="financeSpentSummary">
-          <span>income this month: <strong id="financeIncomeTotalMonth">R$ 0,00</strong></span>
-          <span>invoices this month: <strong id="financeInvoicesTotalMonth">R$ 0,00</strong></span>
-          <span>spent this month: <strong id="financeSpentTotalMonth">R$ 0,00</strong></span>
-          <span>budget used: <strong id="financeSpentBudgetProgress">0%</strong></span>
-          <span>projected income: <strong id="financeProjectedIncomeTotal">R$ 0,00</strong></span>
-          <span>projected expense: <strong id="financeProjectedExpenseTotal">R$ 0,00</strong></span>
-          <span>projected net: <strong id="financeProjectedNetTotal">R$ 0,00</strong></span>
-        </div>
-        <div id="financeSpentPartitionArea">
-          <svg id="financeSpentPie" viewBox="0 0 220 220" aria-label="Spent by category"></svg>
-          <ul id="financeSpentLegend"></ul>
-        </div>
-        <div id="financeSpentDetailPanel">
-          <div id="financeSpentDetailTitle">category logs: none selected</div>
-          <ul id="financeSpentDetailList"></ul>
-        </div>
-      </div>
-    </div>
+    <p id="financeStatus" class="projection-status">Ready.</p>
+    <div id="financeTotals" class="finance-totals"></div>
+    <div id="financeCategories" class="finance-categories"></div>
+    <ul id="financeRecent" class="projection-list"></ul>
   </div>
 </div>
-<!-- START BUTTON MENU -->
-  </section>
+
     <div id="appMenu" class="quadros">
         <ul>
             <li onclick="hideQuadro('workoutContainer'), hideAppMenu(), clickStart()"><img src="./imagens/98icons/w98_battery_alt.ico" width="35" height="35">Workout</li>
