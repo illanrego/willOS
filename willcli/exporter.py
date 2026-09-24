@@ -20,7 +20,7 @@ TERMINAL_STATES = ("done", "skipped")
 LANE_ORDER = ("standup", "comics", "moc", "teacher", "freela")
 CONTENTFLOW_DEFAULT_STORE = Path.home() / ".local" / "share" / "contentflow" / "board.json"
 
-EXPORTERS = ("content", "notes")
+EXPORTERS = ("content", "notes", "routine", "skills", "tasks", "planner", "finance")
 
 
 def contentflow_store() -> Path:
@@ -143,6 +143,183 @@ def export_notes() -> tuple[str, int]:
     return "notes", total
 
 
+def export_routine() -> tuple[str, int]:
+    from . import routine
+
+    payload = routine.load()
+    rows = routine.summary(payload)
+    days: dict[str, dict[str, int]] = {}
+    for row in rows:
+        for day in row["days"]:
+            days.setdefault(day, {})[row["code"]] = 1
+    store.write_render_model(
+        "routine",
+        {
+            "generated_at": store.now_iso(),
+            "source": "will routine store",
+            "routines": [
+                {
+                    "code": row["code"],
+                    "label": row["label"],
+                    "streak": row["streak"],
+                    "done_today": row["done_today"],
+                    "month_count": row["month_count"],
+                    "last_done_on": row["last_done_on"],
+                }
+                for row in rows
+            ],
+            "days": {key: days[key] for key in sorted(days)},
+        },
+    )
+    return "routine", len(rows)
+
+
+def export_skills() -> tuple[str, int]:
+    from . import skills
+
+    payload = skills.load()
+    rows = skills.summary(payload)
+    days: dict[str, dict[str, int]] = {}
+    for row in rows:
+        for day, value in row["days"].items():
+            days.setdefault(day, {})[row["code"]] = int(value)
+    store.write_render_model(
+        "skills",
+        {
+            "generated_at": store.now_iso(),
+            "source": "will skills store",
+            "skills": [
+                {
+                    "code": row["code"],
+                    "label": row["label"],
+                    "total": row["total"],
+                    "today": row["today"],
+                    "streak": row["streak"],
+                    "month_total": row["month_total"],
+                }
+                for row in rows
+            ],
+            "days": {key: days[key] for key in sorted(days)},
+        },
+    )
+    return "skills", len(rows)
+
+
+def export_tasks() -> tuple[str, int]:
+    from . import tasks
+
+    payload = tasks.load()
+    summary = tasks.summary(payload)
+    columns = {
+        state: [
+            {
+                "id": task.get("id"),
+                "text": task.get("text", ""),
+                "lane": task.get("lane", ""),
+                "created_at": task.get("created_at", ""),
+                "done_at": task.get("done_at", ""),
+            }
+            for task in rows
+        ]
+        for state, rows in summary["columns"].items()
+    }
+    store.write_render_model(
+        "tasks",
+        {
+            "generated_at": store.now_iso(),
+            "source": "will tasks store",
+            "open": summary["open"],
+            "counts": summary["counts"],
+            "columns": columns,
+        },
+    )
+    return "tasks", summary["open"]
+
+
+def export_planner() -> tuple[str, int]:
+    from . import planner
+
+    payload = planner.load()
+    summary = planner.summary(payload)
+    current_ids = {plan.get("id") for plan in summary["current"]}
+    upcoming_ids = {plan.get("id") for plan in summary["upcoming"]}
+    store.write_render_model(
+        "planner",
+        {
+            "generated_at": store.now_iso(),
+            "source": "will planner store",
+            "plans": [
+                {
+                    "id": plan.get("id"),
+                    "title": plan.get("title", ""),
+                    "start": plan.get("start", ""),
+                    "end": plan.get("end", ""),
+                    "note": plan.get("note", ""),
+                    "state": (
+                        "current"
+                        if plan.get("id") in current_ids
+                        else "upcoming"
+                        if plan.get("id") in upcoming_ids
+                        else "past"
+                    ),
+                }
+                for plan in summary["plans"]
+            ],
+        },
+    )
+    return "planner", len(summary["plans"])
+
+
+def export_finance() -> tuple[str, int]:
+    from . import finance
+
+    payload = finance.load()
+    summary = finance.summary(payload)
+    store.write_render_model(
+        "finance",
+        {
+            "generated_at": store.now_iso(),
+            "source": "will finance store",
+            "totals": summary["totals"],
+            "months": summary["months"],
+            "categories": summary["categories"],
+            "recent": [
+                {
+                    "id": entry.get("id"),
+                    "date": entry.get("date", ""),
+                    "kind": entry.get("kind", ""),
+                    "amount": finance.from_cents(int(entry.get("amount_cents", 0))),
+                    "category": entry.get("category", ""),
+                    "note": entry.get("note", ""),
+                }
+                for entry in summary["recent"]
+            ],
+        },
+    )
+    return "finance", summary["totals"]["count"]
+
+
+DISPATCH = {
+    "content": export_content,
+    "notes": export_notes,
+    "routine": export_routine,
+    "skills": export_skills,
+    "tasks": export_tasks,
+    "planner": export_planner,
+    "finance": export_finance,
+}
+
+UNITS = {
+    "content": "cards",
+    "notes": "lines",
+    "routine": "routines",
+    "skills": "skills",
+    "tasks": "open tasks",
+    "planner": "plans",
+    "finance": "entries this month",
+}
+
+
 def run(domains: list[str] | None = None, quiet: bool = False) -> int:
     wanted = list(domains or EXPORTERS)
     unknown = [name for name in wanted if name not in EXPORTERS]
@@ -150,12 +327,7 @@ def run(domains: list[str] | None = None, quiet: bool = False) -> int:
         raise SystemExit(f"no exporter for: {', '.join(unknown)} (known: {', '.join(EXPORTERS)})")
 
     for name in wanted:
-        if name == "content":
-            _, count = export_content()
-            unit = "cards"
-        else:
-            _, count = export_notes()
-            unit = "lines"
+        _, count = DISPATCH[name]()
         if not quiet:
-            print(f"exported {name} -> {store.data_dir() / (name + '.json')} ({count} {unit})")
+            print(f"exported {name} -> {store.data_dir() / (name + '.json')} ({count} {UNITS[name]})")
     return 0
