@@ -55,6 +55,12 @@ const MIGRATED_WINDOWS = [
     core: "tasks-projection.js",
     data: "data/tasks.json",
   },
+  {
+    id: "skillsContainer",
+    script: "skills-projection.js",
+    core: "skills-projection.js",
+    data: "data/skills.json",
+  },
 ];
 
 // Comments legitimately name the things the code must not do, so scan code only.

@@ -856,7 +856,6 @@ async function saveIntegrationMetadata(provider, metadata, status = "active") {
 }
 
 const FEATURE_SYNC_DEFINITIONS = {
-  skillsContainer: { key: "gamify", label: "Gamify" },
   recContainer: { key: "lists", label: "Lists" },
   nextFeatures: { key: "lists", label: "Lists" },
   workoutContainer: { key: "workout", label: "Workout" },
@@ -865,7 +864,6 @@ const FEATURE_SYNC_DEFINITIONS = {
   connectionsContainer: { key: "connections", label: "Connections" },
 };
 const BACKEND_SYNC_ALL_CONTAINER_IDS = [
-  "skillsContainer",
   "calendarContainer",
   "workoutContainer",
   "recContainer",
@@ -899,11 +897,6 @@ function resetFeatureSyncState() {
 }
 
 async function loadFeatureSyncGroup(key) {
-  if (key === "gamify") {
-    await loadTrackerBackendState();
-    renderTrackerBackedUi();
-    return;
-  }
   if (key === "calendar") {
     await loadCalendarBackendState();
     generateCalendar();
@@ -1010,7 +1003,6 @@ async function loadBackendSession(session) {
 
   if (!session) {
     financeRemoteState.loaded = false;
-    trackerRemoteState.loaded = false;
     calendarRemoteState.loaded = false;
     workoutRemoteState.loaded = false;
     if (typeof resetWorkoutV2BackendState === "function") resetWorkoutV2BackendState();
@@ -1180,7 +1172,6 @@ async function refreshBackendFromServer() {
   } catch (error) {
     console.error("Backend reload error:", error);
     financeRemoteState.loaded = false;
-    trackerRemoteState.loaded = false;
     calendarRemoteState.loaded = false;
     workoutRemoteState.loaded = false;
     if (typeof resetWorkoutV2BackendState === "function") resetWorkoutV2BackendState();
@@ -1322,8 +1313,6 @@ window.startpageBackendDiagnostics = function () {
     configured: Boolean(backendState.client),
     signedIn: Boolean(backendState.session),
     backendActive: isFinanceBackendActive(),
-    trackerBackendActive: isTrackerBackendActive(),
-    trackerBackendWritable: isTrackerBackendWritable(),
     calendarBackendActive: isCalendarBackendActive(),
     workoutBackendActive: isWorkoutBackendActive(),
     listBackendActive: isListBackendActive(),
@@ -1334,7 +1323,6 @@ window.startpageBackendDiagnostics = function () {
     wallpaper: getLocalWallpaper(),
     entries: getFinanceEntries().length,
     categories: getFinanceBudgetState().categories.length,
-    trackers: Object.keys(trackerRemoteState.trackerIds).length,
     calendarNotes: Object.keys(getCalendarNotes()).length,
     workoutExercises: loadWorkoutExerciseLibrary().length,
     recommendations: getRecommendations().length,
@@ -4272,114 +4260,8 @@ function skillThresholdMax(skillCount) {
   return 2047;
 }
 
-const SKILL_LVL_ELEMENT_IDS = {
-  coding: "lvl1",
-  fitness: "lvl2",
-  meditation: "lvl3",
-  content: "lvl4",
-  standup: "lvl5",
-  jobhunting: "lvl6",
-};
-
-function refreshSkillXpUi(skill) {
-  const count = parseInt(localStorage.getItem(skill + "Count") || "0", 10);
-  const meter = document.getElementById(skill + "Meter");
-  if (meter) {
-    meter.value = count;
-    meter.max = skillThresholdMax(count);
-  }
-  const xpTotal = document.getElementById(skill + "TotalCount");
-  if (xpTotal) xpTotal.textContent = String(count);
-  const lvlId = SKILL_LVL_ELEMENT_IDS[skill];
-  const lvlEl = lvlId ? document.getElementById(lvlId) : null;
-  if (lvlEl) lvlEl.textContent = String(skillThresholdLevel(count));
-}
-
-function sortGamifySkillCardsByTotalCount() {
-  const row = document.getElementById("gamifySkillBoxesRow");
-  if (!row) return;
-
-  const cards = Array.from(row.querySelectorAll(".gamify-skill-card[data-skill]"));
-  const orderedCards = cards
-    .map((card, index) => ({
-      card,
-      count: parseInt(localStorage.getItem(card.dataset.skill + "Count") || "0", 10),
-      index,
-    }))
-    .sort((a, b) => b.count - a.count || a.index - b.index)
-    .map(({ card }) => card);
-
-  orderedCards.forEach((card) => row.appendChild(card));
-}
-
-function adjustSkillXp(skill, delta) {
-  let count = parseInt(localStorage.getItem(skill + "Count") || "0", 10);
-  count = Math.max(0, count + delta);
-  localStorage.setItem(skill + "Count", String(count));
-  refreshSkillXpUi(skill);
-  sortGamifySkillCardsByTotalCount();
-}
-
-function setSkillXp(skill, count) {
-  localStorage.setItem(skill + "Count", String(Math.max(0, count)));
-  refreshSkillXpUi(skill);
-  sortGamifySkillCardsByTotalCount();
-}
-
-// PROJECTS METERS UPDATE
-
-document.addEventListener("DOMContentLoaded", function () {
-  recalculateGamifySkillXp("standup");
-  Object.keys(SKILL_LVL_ELEMENT_IDS).forEach((skill) => {
-    refreshSkillXpUi(skill);
-  });
-  sortGamifySkillCardsByTotalCount();
-});
-
-function upXp(skill) {
-  adjustSkillXp(skill, 1);
-}
-
-function trackerDateKey(year, month, day) {
-  return `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-}
-
-function parseTrackerDateKey(dateKey) {
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(dateKey || ""));
-  if (!match) return null;
-  return {
-    year: Number(match[1]),
-    month: Number(match[2]) - 1,
-    day: Number(match[3]),
-  };
-}
-
-function parseTrackerMonthKey(monthKey) {
-  const match = /^(\d{4})-(\d{1,2})$/.exec(String(monthKey || ""));
-  if (!match) return null;
-  const year = Number(match[1]);
-  // localStorage BoardState suffixes are one-based; convert to JS Date month.
-  const month = Number(match[2]) - 1;
-  if (!Number.isInteger(year) || !Number.isInteger(month) || month < 0 || month > 11) {
-    return null;
-  }
-  return { year, month };
-}
-
-function isValidTrackerDay(year, month, day) {
-  if (
-    !Number.isInteger(year) ||
-    !Number.isInteger(month) ||
-    !Number.isInteger(day) ||
-    month < 0 ||
-    month > 11 ||
-    day < 1
-  ) {
-    return false;
-  }
-  return day <= new Date(year, month + 1, 0).getDate();
-}
-
+// SKILL LEVELS / METERS used to live here. Gamify is a projection now:
+// skills-projection.js draws data/skills.json, written by `will skill`.
 // DRAGABLE FUNCTION (cp from https://jsfiddle.net/4t3Ju/)
 
 window.onload = function () {
@@ -4406,7 +4288,7 @@ window.onload = function () {
   makeResizable("skillsContainer", {
     minWidth: 540,
     minHeight: 360,
-    onResize: scheduleGamifyCalendarRender,
+    onResize: scheduleSkillsRender,
   });
   makeResizable("dailiesContainer", {
     minWidth: 420,
@@ -4452,14 +4334,9 @@ var resizeStartHeight = 0;
 var resizeStartLeft = 0;
 var resizeStartTop = 0;
 var resizeOnResize = null;
-var gamifyRenderRaf = 0;
-
-function scheduleGamifyCalendarRender() {
-  if (gamifyRenderRaf) return;
-  gamifyRenderRaf = requestAnimationFrame(function () {
-    gamifyRenderRaf = 0;
-    renderGamifyStreakCalendar();
-  });
+// The skills window draws a render model; the projection owns the redraw.
+function scheduleSkillsRender() {
+  if (typeof scheduleSkillsProjectionRender === "function") scheduleSkillsProjectionRender();
 }
 
 function draggable(id) {
@@ -5075,6 +4952,7 @@ function hideQuadro(idQuadro) {
     "dailiesContainer",
     "todoContainer",
     "kanbanContainer",
+    "skillsContainer",
   ];
   quadro.style.display = opening
     ? (flexQuadros.includes(idQuadro) ? "flex" : "block")
@@ -5083,7 +4961,7 @@ function hideQuadro(idQuadro) {
     void syncFeatureForContainer(idQuadro);
   }
   if (opening && idQuadro === "skillsContainer") {
-    scheduleGamifyCalendarRender();
+    scheduleSkillsRender();
   }
   if (opening && idQuadro === "contentContainer") {
     scheduleContentBoardRender();
@@ -5570,794 +5448,11 @@ function skillUpXp(skill){
 };
 */
 
-document.addEventListener("DOMContentLoaded", function () {
-  updateDailyCounter("coding");
-  updateDailyCounter("content");
-  updateDailyCounter("fitness");
-  updateDailyCounter("standup");
-  updateDailyCounter("meditation");
-  initGamifyStreakCalendar();
-});
-
-/** Board state month suffixes use one-based calendar months: January=1, May=5. */
-function monthKeyVariants(year, month) {
-  const n = month + 1;
-  const legacy = `${year}-${n}`;
-  const padded = `${year}-${String(n).padStart(2, "0")}`;
-  return legacy === padded ? [legacy] : [legacy, padded];
-}
-
-function boardStateStorageKey(skill, monthKeyStr) {
-  return `${skill}BoardState_${monthKeyStr}`;
-}
-
-function safeParseBoardState(raw) {
-  if (raw == null || raw === "") return {};
-  try {
-    const parsed = JSON.parse(raw);
-    if (parsed !== null && typeof parsed === "object" && !Array.isArray(parsed)) {
-      return parsed;
-    }
-  } catch (_) {}
-  return {};
-}
-
-function getBoardStateSnapshot(skill, year, month) {
-  const merged = {};
-  for (const v of monthKeyVariants(year, month)) {
-    Object.assign(
-      merged,
-      safeParseBoardState(localStorage.getItem(boardStateStorageKey(skill, v))),
-    );
-  }
-  return merged;
-}
-
-function saveBoardState(skill, year, month, boardState) {
-  const variants = monthKeyVariants(year, month);
-  const canonical = variants[0];
-  localStorage.setItem(
-    boardStateStorageKey(skill, canonical),
-    JSON.stringify(boardState),
-  );
-  if (variants.length > 1) {
-    localStorage.removeItem(boardStateStorageKey(skill, variants[1]));
-  }
-}
-
-const GAMIFY_SKILLS = {
-  coding: { label: "Coding", color: "#00c853" },
-  content: { label: "Content", color: "#ff8a00" },
-  fitness: { label: "Physique", color: "#00bcd4" },
-  standup: { label: "Stand Up", color: "#ef5350" },
-  meditation: { label: "Meditation", color: "#7e57c2" },
-  jobhunting: { label: "Job Hunting", color: "#ffc107" },
-};
-
-const TRACKER_IMPORT_SCOPE = "trackers_v1";
-const trackerRemoteState = {
-  loaded: false,
-  trackerIds: {},
-};
-
-function skillTrackerCode(skill) {
-  return `skill:${skill}`;
-}
-
-function getTrackerDefinitions() {
-  return Object.entries(GAMIFY_SKILLS).map(([skill, meta]) => ({
-    code: skillTrackerCode(skill),
-    kind: "skill",
-    localCode: skill,
-    label: meta.label,
-    color: meta.color,
-    dayMax: skill === "standup" ? 3 : skill === "fitness" ? 7 : 1,
-  }));
-}
-
-function isTrackerBackendActive() {
-  return Boolean(backendState.client && backendState.session && trackerRemoteState.loaded);
-}
-
-function isTrackerBackendWritable() {
-  return Boolean(backendState.client && backendState.session);
-}
-
-function encodeTrackerValue(kind, localCode, value) {
-  if (kind === "skill" && localCode === "fitness") {
-    const training = fitnessTrainingFromValue(value);
-    if (training === FITNESS_UNKNOWN_TRAINING) return 7;
-    return training ? FITNESS_TRAINING_CYCLE.indexOf(training) + 1 : 0;
-  }
-  if (kind === "skill") return gamifyDayXpValue(localCode, value);
-  return Math.max(0, Number(value) || 0);
-}
-
-function decodeTrackerValue(kind, localCode, value) {
-  const n = Math.max(0, Number(value) || 0);
-  if (kind === "skill" && localCode === "fitness") {
-    if (n === 7) return FITNESS_UNKNOWN_TRAINING;
-    return FITNESS_TRAINING_CYCLE[n - 1] || "";
-  }
-  return n;
-}
-
-async function ensureBackendTrackers() {
-  const userId = getBackendUserId();
-  if (!backendState.client || !userId) throw new Error("Supabase session missing");
-
-  const ids = {};
-  for (const tracker of getTrackerDefinitions()) {
-    const row = throwIfSupabaseError(
-      await backendState.client
-        .from("trackers")
-        .upsert(
-          {
-            user_id: userId,
-            kind: tracker.kind,
-            code: tracker.code,
-            label: tracker.label,
-            color: tracker.color,
-            day_max: tracker.dayMax,
-            is_active: true,
-          },
-          { onConflict: "user_id,code" },
-        )
-        .select("id, code")
-        .single(),
-    );
-    ids[row.code] = row.id;
-  }
-  trackerRemoteState.trackerIds = ids;
-  return ids;
-}
-
-function collectLocalTrackerEntries() {
-  const entries = [];
-
-  Object.keys(GAMIFY_SKILLS).forEach((skill) => {
-    const prefix = `${skill}BoardState_`;
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (!key || !key.startsWith(prefix)) continue;
-      const monthParts = parseTrackerMonthKey(key.slice(prefix.length));
-      if (!monthParts) continue;
-      const boardState = safeParseBoardState(localStorage.getItem(key));
-      Object.entries(boardState).forEach(([day, value]) => {
-        const dayNumber = Number(day);
-        if (!isValidTrackerDay(monthParts.year, monthParts.month, dayNumber)) return;
-        const encoded = encodeTrackerValue("skill", skill, value);
-        if (encoded <= 0) return;
-        entries.push({
-          trackerCode: skillTrackerCode(skill),
-          dateKey: trackerDateKey(monthParts.year, monthParts.month, dayNumber),
-          value: encoded,
-        });
-      });
-    }
-  });
-
-  return entries;
-}
-
-async function importTrackerLocalDataOnce() {
-  const userId = getBackendUserId();
-  if (!backendState.client || !userId) return;
-
-  const trackerIds = await ensureBackendTrackers();
-  const entries = collectLocalTrackerEntries();
-  for (const entry of entries) {
-    const trackerId = trackerIds[entry.trackerCode];
-    if (!trackerId) continue;
-    throwIfSupabaseError(
-      await backendState.client.from("tracker_daily_values").upsert(
-        {
-          user_id: userId,
-          tracker_id: trackerId,
-          tracked_on: entry.dateKey,
-          value: entry.value,
-        },
-        { onConflict: "user_id,tracker_id,tracked_on" },
-      ),
-    );
-  }
-
-  if (!hasBackendImportCompleted(TRACKER_IMPORT_SCOPE)) {
-    markBackendImportCompleted(TRACKER_IMPORT_SCOPE);
-  }
-}
-
-function applyRemoteTrackerRowsToLocalStorage(rows, trackerCodesById) {
-  const skillMonths = new Map();
-  const definitions = new Map(getTrackerDefinitions().map((tracker) => [tracker.code, tracker]));
-
-  (rows || []).forEach((row) => {
-    const trackerCode = trackerCodesById[row.tracker_id];
-    const definition = definitions.get(trackerCode);
-    const date = parseTrackerDateKey(row.tracked_on);
-    if (!definition || !date || !isValidTrackerDay(date.year, date.month, date.day)) return;
-
-    const decoded = decodeTrackerValue(definition.kind, definition.localCode, row.value);
-    if (!decoded) return;
-
-    const key = `${definition.localCode}|${date.year}|${date.month}`;
-    const monthEntry = skillMonths.get(key) || {
-      year: date.year,
-      month: date.month,
-      boardState: {},
-    };
-    monthEntry.boardState[date.day] = decoded;
-    skillMonths.set(key, monthEntry);
-  });
-
-  skillMonths.forEach((monthEntry, key) => {
-    const [skill] = key.split("|");
-    saveBoardState(skill, monthEntry.year, monthEntry.month, {
-      ...getBoardStateSnapshot(skill, monthEntry.year, monthEntry.month),
-      ...monthEntry.boardState,
-    });
-  });
-}
-
-async function loadTrackerBackendState() {
-  const userId = getBackendUserId();
-  if (!backendState.client || !userId) {
-    trackerRemoteState.loaded = false;
-    return;
-  }
-
-  const trackerIds = await ensureBackendTrackers();
-  const ids = Object.values(trackerIds);
-  if (ids.length === 0) {
-    trackerRemoteState.loaded = true;
-    return;
-  }
-
-  const rows = throwIfSupabaseError(
-    await backendState.client
-      .from("tracker_daily_values")
-      .select("tracker_id, tracked_on, value")
-      .eq("user_id", userId)
-      .in("tracker_id", ids),
-  );
-  const trackerCodesById = Object.fromEntries(
-    Object.entries(trackerIds).map(([code, id]) => [id, code]),
-  );
-  applyRemoteTrackerRowsToLocalStorage(rows, trackerCodesById);
-  trackerRemoteState.loaded = true;
-}
-
-async function syncTrackerDayValue(kind, localCode, year, month, day, rawValue) {
-  if (!isTrackerBackendWritable()) return;
-  const userId = getBackendUserId();
-  const trackerCode = skillTrackerCode(localCode);
-  if (!backendState.client || !userId) return;
-
-  try {
-    let trackerId = trackerRemoteState.trackerIds[trackerCode];
-    if (!trackerId) {
-      const trackerIds = await ensureBackendTrackers();
-      trackerId = trackerIds[trackerCode];
-    }
-    if (!trackerId) throw new Error(`Tracker missing for ${trackerCode}`);
-
-    const encoded = encodeTrackerValue(kind, localCode, rawValue);
-    if (!isValidTrackerDay(year, month, day)) {
-      throw new Error(`Invalid tracker date parts: ${year}-${month}-${day}`);
-    }
-    const dateKey = trackerDateKey(year, month, day);
-    if (encoded <= 0) {
-      throwIfSupabaseError(
-        await backendState.client
-          .from("tracker_daily_values")
-          .delete()
-          .eq("user_id", userId)
-          .eq("tracker_id", trackerId)
-          .eq("tracked_on", dateKey),
-      );
-      return;
-    }
-
-    throwIfSupabaseError(
-      await backendState.client.from("tracker_daily_values").upsert(
-        {
-          user_id: userId,
-          tracker_id: trackerId,
-          tracked_on: dateKey,
-          value: encoded,
-        },
-        { onConflict: "user_id,tracker_id,tracked_on" },
-      ),
-    );
-  } catch (error) {
-    console.error("Tracker DB sync error:", error);
-  }
-}
-
-function renderTrackerBackedUi() {
-  Object.keys(GAMIFY_SKILLS).forEach((skill) => {
-    recalculateGamifySkillXp(skill);
-    updateDailyCounter(skill);
-  });
-  renderGamifyStreakCalendar();
-}
-
-let gamifySelectedSkill = "coding";
-let gamifyViewYear = new Date().getFullYear();
-let gamifyViewMonth = new Date().getMonth();
-const FITNESS_TRAINING_CYCLE = ["A", "B", "C", "D", "E", "F"];
-const FITNESS_UNKNOWN_TRAINING = "__WORKOUT__";
-
-function fitnessTrainingFromValue(value) {
-  if (typeof value === "string") {
-    const v = value.trim().toUpperCase();
-    if (FITNESS_TRAINING_CYCLE.includes(v)) return v;
-    if (v === FITNESS_UNKNOWN_TRAINING) return FITNESS_UNKNOWN_TRAINING;
-  }
-  const numeric = Number(value) || 0;
-  if (numeric === 7) return FITNESS_UNKNOWN_TRAINING;
-  if (numeric >= 1 && numeric <= FITNESS_TRAINING_CYCLE.length) {
-    return FITNESS_TRAINING_CYCLE[numeric - 1];
-  }
-  return "";
-}
-
-function isGamifyDayDone(skill, value) {
-  if (skill === "fitness") return fitnessTrainingFromValue(value) !== "";
-  return (Number(value) || 0) > 0;
-}
-
-function getGamifyDayBadge(skill, value) {
-  if (skill === "fitness") {
-    const training = fitnessTrainingFromValue(value);
-    return training === FITNESS_UNKNOWN_TRAINING ? "" : training;
-  }
-  if (skill === "standup") {
-    const count = Number(value) || 0;
-    return count > 0 ? String(count) : "";
-  }
-  return "";
-}
-
-function nextGamifyDayState(skill, value) {
-  if (skill === "standup") {
-    const current = Number(value) || 0;
-    if (current >= 3) return null;
-    return current + 1;
-  }
-  if (skill !== "fitness") return isGamifyDayDone(skill, value) ? null : 1;
-  const current = fitnessTrainingFromValue(value);
-  if (!current) return "A";
-  const idx = FITNESS_TRAINING_CYCLE.indexOf(current);
-  if (idx < 0) return "A";
-  if (idx === FITNESS_TRAINING_CYCLE.length - 1) return null;
-  return FITNESS_TRAINING_CYCLE[idx + 1];
-}
-
-function gamifyDayXpValue(skill, value) {
-  if (skill === "fitness") return isGamifyDayDone(skill, value) ? 1 : 0;
-  if (skill === "standup") return Math.max(0, Math.min(3, Number(value) || 0));
-  return isGamifyDayDone(skill, value) ? 1 : 0;
-}
-
-function recalculateGamifySkillXp(skill) {
-  let total = 0;
-  const prefix = `${skill}BoardState_`;
-  const monthStates = new Map();
-
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (!key || !key.startsWith(prefix)) continue;
-    const monthKey = key.slice(prefix.length).replace(/-(\d)$/, "-0$1");
-    const boardState = monthStates.get(monthKey) || {};
-    Object.assign(boardState, safeParseBoardState(localStorage.getItem(key)));
-    monthStates.set(monthKey, boardState);
-  }
-
-  monthStates.forEach((boardState) => {
-    Object.keys(boardState).forEach((day) => {
-      total += gamifyDayXpValue(skill, boardState[day]);
-    });
-  });
-
-  setSkillXp(skill, total);
-}
-
-function toggleGamifyDay(skill, year, month, day) {
-  if (skill === "fitness" && typeof handleWorkoutGamifyDay === "function") {
-    void handleWorkoutGamifyDay(year, month, day);
-    return;
-  }
-  const boardState = getBoardStateSnapshot(skill, year, month);
-  const prevValue = boardState[day];
-  const nextValue = nextGamifyDayState(skill, prevValue);
-  const xpDelta = gamifyDayXpValue(skill, nextValue) - gamifyDayXpValue(skill, prevValue);
-
-  if (nextValue == null) delete boardState[day];
-  else boardState[day] = nextValue;
-
-  if (xpDelta !== 0) adjustSkillXp(skill, xpDelta);
-
-  saveBoardState(skill, year, month, boardState);
-  void syncTrackerDayValue("skill", skill, year, month, day, nextValue);
-  if (skill === "standup") recalculateGamifySkillXp(skill);
-
-  renderGamifyStreakCalendar();
-  updateDailyCounter(skill);
-}
-
-function syncGamifySelectedSkillCard() {
-  document.querySelectorAll("#gamifySkillBoxesRow .gamify-skill-card[data-skill]").forEach((card) => {
-    const on = card.dataset.skill === gamifySelectedSkill;
-    card.classList.toggle("gamify-skill-card--active", on);
-    card.setAttribute("aria-pressed", on ? "true" : "false");
-  });
-}
-
-function setGamifySelectedSkill(skill) {
-  if (!skill || !GAMIFY_SKILLS[skill]) return false;
-  gamifySelectedSkill = skill;
-  syncGamifySelectedSkillCard();
-  return true;
-}
-
-function initGamifyStreakCalendar() {
-  const nav = document.getElementById("gamifyMonthNav");
-  const grid = document.getElementById("gamifyStreakGrid");
-  if (!nav || !grid) return;
-
-  nav.innerHTML = "";
-  const prevButton = document.createElement("button");
-  prevButton.textContent = "←";
-  const nextButton = document.createElement("button");
-  nextButton.textContent = "→";
-  const monthDisplay = document.createElement("span");
-  monthDisplay.id = "gamifyMonthDisplay";
-
-  nav.appendChild(prevButton);
-  nav.appendChild(monthDisplay);
-  nav.appendChild(nextButton);
-
-  document.querySelectorAll("#gamifySkillBoxesRow .gamify-skill-card[data-skill]").forEach((card) => {
-    card.addEventListener("click", () => {
-      if (!setGamifySelectedSkill(card.dataset.skill)) return;
-      renderGamifyStreakCalendar();
-    });
-    card.addEventListener("keydown", (e) => {
-      if (e.key !== "Enter" && e.key !== " ") return;
-      e.preventDefault();
-      if (!setGamifySelectedSkill(card.dataset.skill)) return;
-      renderGamifyStreakCalendar();
-    });
-  });
-  syncGamifySelectedSkillCard();
-
-  prevButton.addEventListener("click", () => {
-    gamifyViewMonth--;
-    if (gamifyViewMonth < 0) {
-      gamifyViewMonth = 11;
-      gamifyViewYear--;
-    }
-    renderGamifyStreakCalendar();
-  });
-
-  nextButton.addEventListener("click", () => {
-    gamifyViewMonth++;
-    if (gamifyViewMonth > 11) {
-      gamifyViewMonth = 0;
-      gamifyViewYear++;
-    }
-    renderGamifyStreakCalendar();
-  });
-
-  let resizeTimer;
-  window.addEventListener("resize", () => {
-    clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(() => renderGamifyStreakCalendar(), 100);
-  });
-
-  Object.keys(GAMIFY_SKILLS).forEach((skill) => {
-    document.getElementById(`${skill}Btn`)?.addEventListener("click", function () {
-      if (!setGamifySelectedSkill(skill)) return;
-      renderGamifyStreakCalendar();
-    });
-  });
-
-  renderGamifyStreakCalendar();
-}
-
-function renderGamifyStreakCalendar() {
-  const grid = document.getElementById("gamifyStreakGrid");
-  const svg = document.getElementById("gamifyStreakSvg");
-  const wrap = document.getElementById("gamifyStreakWrap");
-  const monthDisplay = document.getElementById("gamifyMonthDisplay");
-  if (!grid || !svg || !wrap) return;
-
-  const skill = gamifySelectedSkill;
-  const meta = GAMIFY_SKILLS[skill];
-  const year = gamifyViewYear;
-  const month = gamifyViewMonth;
-
-  const monthNames = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-  ];
-  if (monthDisplay) monthDisplay.textContent = `${monthNames[month]} ${year}`;
-
-  const boardState = getBoardStateSnapshot(skill, year, month);
-  const monthStateCache = new Map();
-  monthStateCache.set(`${year}-${month}`, boardState);
-
-  function getMonthBoardState(y, m) {
-    const key = `${y}-${m}`;
-    if (!monthStateCache.has(key)) {
-      monthStateCache.set(key, getBoardStateSnapshot(skill, y, m));
-    }
-    return monthStateCache.get(key);
-  }
-
-  const firstDay = new Date(year, month, 1);
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  /** Monday = first column (JS Sunday=0 → Mon-first pad) */
-  const startPad = (firstDay.getDay() + 6) % 7;
-  const totalCells = Math.ceil((startPad + daysInMonth) / 7) * 7;
-  const rowCount = totalCells / 7;
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const isViewingCurrentMonth =
-    today.getFullYear() === year && today.getMonth() === month;
-
-  let weekRail = document.getElementById("gamifyWeekNumbers");
-  if (!weekRail) {
-    weekRail = document.createElement("div");
-    weekRail.id = "gamifyWeekNumbers";
-    weekRail.className = "gamify-week-number-rail";
-    wrap.appendChild(weekRail);
-  }
-  weekRail.innerHTML = "";
-  weekRail.style.gridTemplateRows = `repeat(${rowCount}, 1fr)`;
-
-  grid.innerHTML = "";
-
-  for (let row = 0; row < rowCount; row++) {
-    const rowDate = new Date(year, month, 1 - startPad + row * 7);
-    const weekNumber = getWeekNumber(rowDate);
-    const weekCell = document.createElement("div");
-    weekCell.className = "gamify-week-number";
-    weekCell.textContent = String(weekNumber);
-    weekRail.appendChild(weekCell);
-  }
-
-  for (let i = 0; i < totalCells; i++) {
-    const cell = document.createElement("div");
-    cell.className = "gamify-streak-cell";
-
-    if (i < startPad || i >= startPad + daysInMonth) {
-      const d = new Date(year, month, 1 - startPad + i);
-      cell.classList.add("gamify-streak-outside");
-
-      const outsideState = getMonthBoardState(d.getFullYear(), d.getMonth());
-      const outsideDone = isGamifyDayDone(skill, outsideState[d.getDate()]);
-      if (outsideDone) {
-        const dotSlot = document.createElement("div");
-        dotSlot.className = "gamify-streak-dot-slot";
-        const dot = document.createElement("span");
-        dot.className = "gamify-streak-dot gamify-streak-done gamify-streak-dot--outside";
-        dot.style.backgroundColor = meta.color;
-        dotSlot.appendChild(dot);
-        cell.appendChild(dotSlot);
-      }
-
-      const outNum = document.createElement("span");
-      outNum.className = "gamify-streak-day-num gamify-streak-day-num--muted";
-      outNum.textContent = String(d.getDate());
-      cell.appendChild(outNum);
-    } else {
-      const day = i - startPad + 1;
-      const dayValue = boardState[day];
-      const dateKey = trackerDateKey(year, month, day);
-      const workoutDraft =
-        skill === "fitness" && typeof getWorkoutDraftForDate === "function"
-          ? getWorkoutDraftForDate(dateKey)
-          : null;
-      const done = isGamifyDayDone(skill, dayValue);
-      const badge = getGamifyDayBadge(skill, dayValue);
-
-      cell.classList.add("gamify-streak-cell--in-month");
-      cell.style.setProperty("--gamify-skill-color", meta.color);
-
-      const num = document.createElement("span");
-      num.className = "gamify-streak-day-num";
-      num.textContent = String(day);
-      cell.appendChild(num);
-
-      const dotSlot = document.createElement("div");
-      dotSlot.className = "gamify-streak-dot-slot";
-      if (done) {
-        cell.classList.add("gamify-streak-has-done");
-        const dot = document.createElement("span");
-        dot.className = "gamify-streak-dot gamify-streak-done";
-        dot.style.backgroundColor = meta.color;
-        if (badge) {
-          const label = document.createElement("span");
-          label.className = "gamify-streak-dot-label";
-          label.textContent = badge;
-          dot.appendChild(label);
-        }
-        dotSlot.appendChild(dot);
-      } else if (workoutDraft) {
-        const dot = document.createElement("span");
-        dot.className = "gamify-streak-dot gamify-streak-dot--draft";
-        dot.style.borderColor = meta.color;
-        const label = document.createElement("span");
-        label.className = "gamify-streak-dot-label";
-        label.textContent = workoutDraft.routineCode || "…";
-        dot.appendChild(label);
-        dotSlot.appendChild(dot);
-      }
-      cell.appendChild(dotSlot);
-
-      cell.addEventListener("click", (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        toggleGamifyDay(skill, year, month, day);
-      });
-
-      if (isViewingCurrentMonth && day === today.getDate()) {
-        cell.classList.add("gamify-streak-today");
-      }
-    }
-    grid.appendChild(cell);
-  }
-
-  requestAnimationFrame(() => {
-    drawGamifyStreakLines(svg, wrap, grid, {
-      skill,
-      startPad,
-      daysInMonth,
-      boardState,
-      color: meta.color,
-    });
-  });
-}
-
-function drawGamifyStreakLines(svg, wrap, grid, opts) {
-  const { skill, startPad, daysInMonth, boardState, color } = opts;
-  svg.innerHTML = "";
-  const cells = grid.querySelectorAll(".gamify-streak-cell");
-  const rect = wrap.getBoundingClientRect();
-  if (!rect.width || !rect.height) return;
-
-  svg.setAttribute("width", String(rect.width));
-  svg.setAttribute("height", String(rect.height));
-
-  function centerForDay(day) {
-    const idx = startPad + day - 1;
-    const el = cells[idx];
-    if (!el) return null;
-    const r = el.getBoundingClientRect();
-    const dot = el.querySelector(".gamify-streak-dot");
-    if (dot) {
-      const dr = dot.getBoundingClientRect();
-      return {
-        x: dr.left - rect.left + dr.width / 2,
-        y: dr.top - rect.top + dr.height / 2,
-      };
-    }
-    return {
-      x: r.left - rect.left + r.width / 2,
-      y: r.bottom - rect.top - 9,
-    };
-  }
-
-  const done = (d) => isGamifyDayDone(skill, boardState[d]);
-
-  for (let d = 1; d < daysInMonth; d++) {
-    const currentCellIndex = startPad + d - 1;
-    const nextCellIndex = currentCellIndex + 1;
-    const wrapsWeekRow =
-      Math.floor(currentCellIndex / 7) !== Math.floor(nextCellIndex / 7);
-    if (wrapsWeekRow) continue;
-
-    if (!done(d) || !done(d + 1)) continue;
-    const a = centerForDay(d);
-    const b = centerForDay(d + 1);
-    if (!a || !b) continue;
-    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-    line.setAttribute("x1", String(a.x));
-    line.setAttribute("y1", String(a.y));
-    line.setAttribute("x2", String(b.x));
-    line.setAttribute("y2", String(b.y));
-    line.setAttribute("stroke", color);
-    line.setAttribute("stroke-width", "3");
-    line.setAttribute("stroke-linecap", "round");
-    line.setAttribute("stroke-dasharray", "6 5");
-    line.setAttribute("opacity", "0.88");
-    svg.appendChild(line);
-  }
-}
-
-function incrementDayCount(skill, day) {
-  const today = new Date();
-  const boardState = getBoardStateSnapshot(
-    skill,
-    today.getFullYear(),
-    today.getMonth(),
-  );
-
-  if (skill === "standup") {
-    const nextValue = nextGamifyDayState(skill, boardState[day]);
-    if (nextValue == null) delete boardState[day];
-    else boardState[day] = nextValue;
-
-    saveBoardState(skill, today.getFullYear(), today.getMonth(), boardState);
-    void syncTrackerDayValue(
-      "skill",
-      skill,
-      today.getFullYear(),
-      today.getMonth(),
-      day,
-      nextValue,
-    );
-    recalculateGamifySkillXp(skill);
-
-    renderGamifyStreakCalendar();
-    updateDailyCounter(skill);
-    startTimer(60);
-    return;
-  }
-
-  const count = (Number(boardState[day]) || 0) + 1;
-  boardState[day] = count;
-
-  saveBoardState(skill, today.getFullYear(), today.getMonth(), boardState);
-  void syncTrackerDayValue(
-    "skill",
-    skill,
-    today.getFullYear(),
-    today.getMonth(),
-    day,
-    count,
-  );
-
-  renderGamifyStreakCalendar();
-
-  updateDailyCounter(skill);
-  upXp(skill);
-  startTimer(60);
-}
-
-function updateDailyCounter(skill) {
-  const dailyCountElement = document.getElementById("dailyCount" + skill);
-  if (!dailyCountElement) return;
-  const today = new Date();
-  const boardState = getBoardStateSnapshot(
-    skill,
-    today.getFullYear(),
-    today.getMonth(),
-  );
-
-  const todayValue = boardState[today.getDate()];
-  if (skill === "fitness") {
-    const badge = getGamifyDayBadge(skill, todayValue);
-    dailyCountElement.textContent = badge || "0";
-    return;
-  }
-  const todayCount = Number(todayValue) || 0;
-  dailyCountElement.textContent = todayCount;
-}
-
+// GAMIFY (skills) used to live here: board state in localStorage, trackers in
+// Supabase, the streak calendar and the daily counters. All of it is gone - the
+// terminal owns the numbers (`will skill coding +1`, `will skill list`) and the
+// window only draws data/skills.json. Ticking a skill no longer mirrors into a
+// routine: obligation and occurrence stay separate.
 // CHATBOT FUNCTIONALITY
 let messages = [
   {
@@ -6617,40 +5712,20 @@ async function sendChatMessage() {
 }
 
 function buildStartpageChatContext() {
-  // Reads the hub's own gamify board state (localStorage) for the last 30 days
-  // and packs it compactly so the local llama can answer from the user's data
-  // without the site touching Supabase for this.
-  const skills = [
-    { code: "coding", label: "Coding" },
-    { code: "content", label: "Content" },
-    { code: "fitness", label: "Physique" },
-    { code: "standup", label: "Stand Up" },
-    { code: "meditation", label: "Meditation" },
-  ];
-  const today = new Date();
+  // Reads the render models the projections already fetched (window.willOsModels),
+  // so the local llama can answer from real data without the page touching the DB.
+  const model = (window.willOsModels && window.willOsModels.skills) || null;
+  if (!model) return "skills: no render model loaded yet (run: will export)";
+
+  const days = model.days || {};
+  const recent = Object.keys(days).sort().slice(-30);
   const out = [];
-  for (const { code, label } of skills) {
-    const days = [];
-    for (let i = 29; i >= 0; i--) {
-      const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() - i);
-      const snap = getBoardStateSnapshot(code, d.getFullYear(), d.getMonth());
-      const raw = snap[d.getDate()];
-      if (raw == null || raw === "") continue;
-      const key =
-        String(d.getDate()).padStart(2, "0") +
-        "/" +
-        String(d.getMonth() + 1).padStart(2, "0");
-      let val = "done";
-      if (code === "fitness") {
-        const t = fitnessTrainingFromValue(raw);
-        val = t ? t : "done";
-      } else if (code === "standup") {
-        val = String(Math.max(0, Math.min(3, Number(raw) || 0)));
-      }
-      days.push(`${key}:${val}`);
-    }
-    out.push(`skill:${code} (${label}): ${days.join(", ") || "no data last 30d"}`);
-  }
+  (model.skills || []).forEach((skill) => {
+    const marks = recent
+      .filter((day) => Number((days[day] || {})[skill.code]) > 0)
+      .map((day) => `${day.slice(8, 10)}/${day.slice(5, 7)}:${Number((days[day] || {})[skill.code])}`);
+    out.push(`skill:${skill.code} (${skill.label}): ${marks.join(", ") || "no data last 30d"}`);
+  });
   return out.join("\n");
 }
 

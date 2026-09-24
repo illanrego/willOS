@@ -37,12 +37,23 @@ test("Workout browser module is an import-driven Strong analytics companion", ()
   assert.match(app, /Your Strong app data (?:will|was) not (?:be )?changed/);
 });
 
-test("Gamify delegates Physique dates to Workout V2", () => {
+test("Workout owns Physique without the old gamify coupling", () => {
   const app = fs.readFileSync(path.join(root, "willos.js"), "utf8");
+  const workout = fs.readFileSync(path.join(root, "workout-v2.js"), "utf8");
 
-  assert.match(app, /skill === "fitness"[^\n]+handleWorkoutGamifyDay/);
-  assert.match(app, /FITNESS_UNKNOWN_TRAINING/);
-  assert.match(app, /loadWorkoutV2BackendState/);
+  // Workout V2 still handles the Physique side of a session defensively, so the
+  // two files never depend on load order.
+  assert.match(workout, /function handleWorkoutGamifyDay/);
+  assert.match(workout, /FITNESS_UNKNOWN_TRAINING/);
+  assert.match(workout, /loadWorkoutV2BackendState/);
+  assert.match(workout, /typeof recalculateGamifySkillXp === "function"/);
+
+  // The old round trip is gone on purpose: a skill tick no longer mirrors into a
+  // routine or into a workout (see AGENTS.md). Skills come from `will skill`,
+  // sessions come from Strong.
+  assert.ok(!app.includes("handleWorkoutGamifyDay"), "gamify must not drive workout anymore");
+  assert.ok(!app.includes("syncMappedDailyFromGamifyChange"), "gamify must not tick routines");
+  assert.ok(!app.includes("GAMIFY_SKILLS"), "gamify board state is gone from the shell");
 });
 
 test("Workout graphs label both axes and expose per-point tooltips", () => {

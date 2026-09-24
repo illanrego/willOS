@@ -16,6 +16,7 @@
     <script src="notes-projection.js?v=20260924-notes" defer></script>
     <script src="planner-projection.js?v=20260924-planner" defer></script>
     <script src="tasks-projection.js?v=20260924-tasks" defer></script>
+    <script src="skills-projection.js?v=20260924-skills" defer></script>
     <script src="projection-core.js?v=20260924-willos-fork" defer></script>
     <script src="content-projection.js?v=20260924-willos-fork" defer></script>
     <script src="willos.js?v=20260924-willos-fork" defer></script>
@@ -98,102 +99,28 @@
    <section>
         <div class="quadros" id="skillsContainer" style="display: none">
           <div class="titleBar">
-        <h2>Gamify</h2>
-        <button onclick="hideQuadro('skillsContainer')">x</button>
-        </div>
-<div id="flexSkills">
-        <div id="gamifyCalendarSection">
-          <div class="gamify-calendar-toolbar">
-            <span class="gamify-calendar-label">Streak calendar</span>
+            <h2>Gamify</h2>
+            <button onclick="hideQuadro('skillsContainer')">x</button>
           </div>
-          <div class="month-nav gamify-month-nav" id="gamifyMonthNav"></div>
-          <div class="gamify-streak-weekdays" aria-hidden="true">
-            <span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span><span>Su</span>
-          </div>
-          <div class="gamify-streak-calendar-wrap" id="gamifyStreakWrap">
-            <div id="gamifyStreakGrid" class="gamify-streak-grid"></div>
-            <svg id="gamifyStreakSvg" class="gamify-streak-svg" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg>
-          </div>
-        </div>
-        <div id="gamifySkillsColumn">
-        <div id="gamifySkillBoxesRow">
-        <div class="skillBox gamify-skill-card gamify-skill-card--active" data-skill="coding" role="button" tabindex="0" aria-pressed="true">
-                <div class="skillDetails">
-                    <div class="skillInfo">
-				    <label for="coding">Coding</label>
-                <img src="./imagens/98icons/w98_keyboard.ico" width="50" height="55"/>
-                    </div>
-<span class="infoRight"><p>lvl:<span id="lvl1">0</span> total:<span id="codingTotalCount">0</span>
-		today:<span id="dailyCountcoding">0</span>
-</p></span>
-
-                    <meter id="codingMeter" min="0" max="31" low="15" high="23" optimum="30" value="0"></meter>
-                </div>
-        </div>
-        <div class="skillBox gamify-skill-card" data-skill="fitness" role="button" tabindex="0" aria-pressed="false">
-              <div class="skillDetails">
-                  <div class="skillInfo">
-			      <label for="physical education">Physique</label>
-                <img src="./imagens/98icons/w98_battery.ico" width="50" height="55"/>
-                  </div>
-<span class="infoRight"><p>lvl:<span id="lvl2">0</span> total:<span id="fitnessTotalCount">0</span>
-		today:<span id="dailyCountfitness">0</span>
-</p></span>
-	                  <meter id="fitnessMeter" min="0" max="7" low="2" high="6" value="0"></meter>
-	              </div>
-          </div>
-        <div class="skillBox gamify-skill-card" data-skill="content" role="button" tabindex="0" aria-pressed="false">
-              <div class="skillDetails">
-                  <div class="skillInfo">
-			      <label for="content">Content</label>
-                <img src="./imagens/98icons/w98_camera3_vid.ico" width="50" height="55"/>
-                  </div>
-<span class="infoRight"><p>lvl:<span id="lvl4">0</span> total:<span id="contentTotalCount">0</span>
-		today:<span id="dailyCountcontent">0</span>
-</p></span>
-	                  <meter id="contentMeter" min="0" max="7" low="2" high="6" value="0"></meter>
-	              </div>
-          </div>
-        <div class="skillBox gamify-skill-card" data-skill="standup" role="button" tabindex="0" aria-pressed="false">
-              <div class="skillDetails">
-                  <div class="skillInfo">
-			      <label for="standup">Stand Up</label>
-                <img src="./imagens/98icons/w98_microphone_2.ico" width="50" height="55"/>
-                  </div>
-<span class="infoRight"><p>lvl:<span id="lvl5">0</span> total:<span id="standupTotalCount">0</span>
-		today:<span id="dailyCountstandup">0</span>
-</p></span>
-	                  <meter id="standupMeter" min="0" max="7" low="2" high="6" value="0"></meter>
-	              </div>
-          </div>
-        <div class="skillBox gamify-skill-card" data-skill="meditation" role="button" tabindex="0" aria-pressed="false">
-              <div class="skillDetails">
-                  <div class="skillInfo">
-			      <label for="meditation">Meditation</label>
-                <img src="./imagens/98icons/w98_clock.ico" width="50" height="55"/>
-                  </div>
-<span class="infoRight"><p>lvl:<span id="lvl3">0</span> total:<span id="meditationTotalCount">0</span>
-		today:<span id="dailyCountmeditation">0</span>
-</p></span>
-	                  <meter id="meditationMeter" min="0" max="7" low="2" high="6" value="0"></meter>
-	              </div>
-          </div>
-        <div class="skillBox gamify-skill-card" data-skill="jobhunting" role="button" tabindex="0" aria-pressed="false">
-              <div class="skillDetails">
-                  <div class="skillInfo">
-			      <label for="jobhunting">Job Hunting</label>
-                <img src="./imagens/98icons/w98_certificate.ico" width="50" height="55"/>
-                  </div>
-<span class="infoRight"><p>lvl:<span id="lvl6">0</span> total:<span id="jobhuntingTotalCount">0</span>
-		today:<span id="dailyCountjobhunting">0</span>
-</p></span>
-	                  <meter id="jobhuntingMeter" min="0" max="7" low="2" high="6" value="0"></meter>
-	              </div>
+          <div id="flexSkills">
+            <div id="gamifyCalendarSection">
+              <div class="gamify-calendar-toolbar">
+                <span class="gamify-calendar-label">Skill days</span>
+              </div>
+              <div class="month-nav gamify-month-nav" id="gamifyMonthNav"></div>
+              <div class="gamify-streak-weekdays" aria-hidden="true">
+                <span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span><span>Su</span>
+              </div>
+              <div class="gamify-streak-calendar-wrap" id="gamifyStreakWrap">
+                <div id="gamifyStreakGrid" class="gamify-streak-grid"></div>
+              </div>
+            </div>
+            <div id="gamifySkillsColumn">
+              <div id="gamifySkillBoxesRow"></div>
+              <p id="gamifyStatus" class="projection-status">Ready.</p>
+            </div>
           </div>
         </div>
-        </div>
-	</div>
-	  </div>
 	<!-- ROUTINE (the old Dailies) -->
 		<div class="quadros" id="dailiesContainer" style="display: none">
 		  <div class="titleBar">
