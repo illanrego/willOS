@@ -169,6 +169,10 @@ def import_finance(payload: dict, rows: list) -> int:
 
 
 def import_recommendations(payload: dict, rows: list) -> int:
+    return import_text_lines(payload, rows, "Rec List")
+
+
+def import_text_lines(payload: dict, rows: list, section: str) -> int:
     count = 0
     for row in rows or []:
         if not isinstance(row, dict):
@@ -176,7 +180,7 @@ def import_recommendations(payload: dict, rows: list) -> int:
         text = texts(pick(row, "text", "title"))
         if not text:
             continue
-        notes.add_line(payload, text, "Rec List")
+        notes.add_line(payload, text, section)
         count += 1
     return count
 
@@ -237,9 +241,13 @@ def run(source: Path, replace: bool = False) -> dict:
         store.save("finance", payload)
         touched.append("finance")
 
-    if payload_in.get("recommendations"):
+    if payload_in.get("recommendations") or payload_in.get("feature_backlog_items"):
         payload = notes.load()
-        found = import_recommendations(payload, payload_in["recommendations"])
+        found = 0
+        if payload_in.get("recommendations"):
+            found += import_recommendations(payload, payload_in["recommendations"])
+        if payload_in.get("feature_backlog_items"):
+            found += import_text_lines(payload, payload_in["feature_backlog_items"], "Next Features")
         store.save("notes", payload)
         report["notes"] = int(report.get("notes", 0)) + found
         if "notes" not in touched:
@@ -249,7 +257,8 @@ def run(source: Path, replace: bool = False) -> dict:
     report["_skipped"] = sorted(
         key for key in payload_in if key not in {
             "notes_sections", "tasks", "trackers", "tracker_daily_values",
-            "kanban_cards", "kanban_columns", "planner_plans", "finance_entries", "recommendations",
+            "kanban_cards", "kanban_columns", "planner_plans", "finance_entries",
+            "recommendations", "feature_backlog_items",
         }
     )
     return report

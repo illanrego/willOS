@@ -39,15 +39,23 @@ test("the working shortcuts sit in the right-hand column", () => {
   });
 });
 
-test("ClickUp and Ideas shortcuts are gone, without disturbing the features", () => {
+test("The retired shortcuts stay retired", () => {
   assert.doesNotMatch(html, /clickupIconDiv/);
   assert.doesNotMatch(html, /ideasIconDiv/);
   assert.doesNotMatch(css, /#clickupIconDiv/);
   assert.doesNotMatch(css, /#ideasIconDiv/);
 
-  // Only the shortcuts were removed: the windows and their start-menu entries remain.
-  assert.match(html, /id="ideasContainer"/);
-  assert.match(html, /hideQuadro\('ideasContainer'\)/);
+  // ClickUp keeps its window and its start-menu entry (only the shortcut went).
+  assert.match(html, /id="clickupContainer"/);
+  assert.match(html, /hideQuadro\('clickupContainer'\)/);
+  assert.doesNotMatch(html, /id="clickupIconDiv"/);
+
+  // Ideas, Rec List and Next Features are retired window and all: they were
+  // note-shaped, so the notebook holds them now (see AGENTS.md).
+  ["ideasContainer", "recContainer", "nextFeatures"].forEach((id) => {
+    assert.doesNotMatch(html, new RegExp(`id="${id}"`), `${id} should be gone from index.html`);
+    assert.doesNotMatch(html, new RegExp(`hideQuadro\\('${id}'\\)`), `${id} should have no entry point`);
+  });
 });
 
 test("no two shortcuts share a slot", () => {

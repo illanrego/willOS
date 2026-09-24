@@ -56,10 +56,6 @@
      <img src="./imagens/w98_calendar.ico" width="60">
      <label>calendar</label>
  </div>
- <div class="icon" id="recIconDiv" onclick="hideQuadro('recContainer')">
-    <img src="./imagens/w98_netshow_notransm.ico" width="60">
-    <label>rec list</label>
- </div>
  <div class="icon" id="workoutIconDiv" onclick="hideQuadro('workoutContainer')">
     <img src="./imagens/98icons/w98_battery.ico" width="60">
     <label>workout</label>
@@ -175,44 +171,6 @@
           <ul id="plannerList" class="projection-list"></ul>
         </div>
       </div>
-<!-- REC LIST -->
-      <div id="recContainer" class="quadros" style="display: none">
-        <div class="titleBar">
-          <h2>Rec List</h2>
-          <button onclick="hideQuadro('recContainer')">x</button>
-           </div>
-       <div id="addRecContainer">
-        <input type="text" id="recInput" placeholder="Enter rec">
-        <button onclick="addRec()">+</button>
-      </div>
-        <ul id="recList"></ul>
-      </div>
-<!-- IDEAS -->
-      <div id="ideasContainer" class="quadros" style="display: none">
-        <div class="titleBar">
-          <h2>Ideas</h2>
-          <button onclick="hideQuadro('ideasContainer')">x</button>
-        </div>
-        <div id="ideasPanel">
-          <div id="videoIdeasColumn">
-            <div class="ideas-column-title">Video Ideas</div>
-            <div class="ideas-add-row">
-              <input type="text" id="videoIdeaInput" placeholder="Add video idea...">
-              <button onclick="addVideoIdea()">+</button>
-            </div>
-            <ul id="videoIdeaList" class="ideas-list"></ul>
-          </div>
-          <div id="jokeIdeasColumn">
-            <div class="ideas-column-title">Joke Ideas</div>
-            <div class="ideas-add-row">
-              <input type="text" id="jokeIdeaInput" placeholder="Add joke idea...">
-              <button onclick="addJokeIdea()">+</button>
-            </div>
-            <ul id="jokeIdeaList" class="ideas-list"></ul>
-          </div>
-        </div>
-        <p id="ideasSyncStatus" class="ideas-sync-status"></p>
-      </div>
 <!-- NOTES -->
       <div class="quadros" id="notesContainer" style="display: none">
         <div class="titleBar">
@@ -266,15 +224,6 @@
         </div>
     </div>
 
-  <div class="quadros" id="nextFeatures" style="display: none">
-    <div class="titleBar">
-     <h2>Next Features</h2>
-     <button onclick="hideQuadro('nextFeatures')">x</button>
-    </div>
-	<input type="text" id="featureInput" placeholder="Enter Feature">
-        <button onclick="addFeature()">+</button>
-        <ul id="featureList"></ul>
-  </div>
   <div class="quadros" id="connectionsContainer" style="display: none">
     <div class="titleBar">
       <h2>Connections</h2>
@@ -672,7 +621,6 @@
   </section>
     <div id="appMenu" class="quadros">
         <ul>
-            <li onclick="hideQuadro('recContainer'), hideAppMenu(), clickStart()"><img src="./imagens/98icons/w98_netshow_notransm.ico" width="35" height="35">Rec List</li>
             <li onclick="hideQuadro('workoutContainer'), hideAppMenu(), clickStart()"><img src="./imagens/98icons/w98_battery_alt.ico" width="35" height="35">Workout</li>
             <li onclick="hideQuadro('pomodoro'), hideAppMenu(), clickStart()"><img src="./imagens/tomatoo.png" width="35" height="35">  Pomodoro</li>
             <li onclick="hideQuadro('todoContainer'), hideAppMenu(), clickStart()"><img src="./imagens/98icons/w98_message_tack.ico" width="35" height="35">To Do list</li>
@@ -684,12 +632,10 @@
             <li onclick="hideQuadro('contentContainer'), hideAppMenu(), clickStart()"><img src="./imagens/98icons/w98_camera3_vid.ico" width="35" height="35">Content</li>
             <li onclick="hideQuadro('chatContainer'), hideAppMenu(), clickStart()"><img src="./imagens/98icons/w98_message_file.ico" width="35" height="35">Chat Assistant</li>
             <li onclick="hideQuadro('financeContainer'), hideAppMenu(), clickStart()"><img src="./imagens/98icons/w98_calculator.ico" width="35" height="35">Finance Log</li>
-            <li onclick="hideQuadro('ideasContainer'), hideAppMenu(), clickStart()"><img src="./imagens/98icons/w98_notepad.ico" width="35" height="35">Ideas</li>
             <li onclick="hideQuadro('notesContainer'), hideAppMenu(), clickStart()"><img src="./imagens/98icons/w98_note.ico" width="35" height="35">Notes</li>
             <li onclick="hideQuadro('plannerContainer'), hideAppMenu(), clickStart()"><img src="./imagens/98icons/w98_notepad_file.ico" width="35" height="35">Planner</li>
             <li onclick="hideQuadro('connectionsContainer'), hideAppMenu(), clickStart()"><img src="./imagens/98icons/w98_web_file.ico" width="35" height="35">Connections</li>
             <li onclick="hideQuadro('llmUsageContainer'), hideAppMenu(), clickStart()"><img src="./imagens/98icons/w98_chip_ramdrive.ico" width="35" height="35">LLM Usage</li>
-            <li onclick="hideQuadro('nextFeatures'), hideAppMenu(), clickStart()"><img src="./imagens/98icons/w98_tools_gear.ico" width="35" height="35">Next Features</li>
 	
 	</ul>
     </div>

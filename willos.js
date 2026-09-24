@@ -856,8 +856,6 @@ async function saveIntegrationMetadata(provider, metadata, status = "active") {
 }
 
 const FEATURE_SYNC_DEFINITIONS = {
-  recContainer: { key: "lists", label: "Lists" },
-  nextFeatures: { key: "lists", label: "Lists" },
   workoutContainer: { key: "workout", label: "Workout" },
   calendarContainer: { key: "calendar", label: "Calendar" },
   financeContainer: { key: "finance", label: "Finance" },
@@ -866,7 +864,6 @@ const FEATURE_SYNC_DEFINITIONS = {
 const BACKEND_SYNC_ALL_CONTAINER_IDS = [
   "calendarContainer",
   "workoutContainer",
-  "recContainer",
   "financeContainer",
 ];
 const featureSyncState = new Map();
@@ -905,11 +902,6 @@ async function loadFeatureSyncGroup(key) {
   if (key === "workout") {
     await loadWorkoutV2BackendState();
     renderWorkout();
-    return;
-  }
-  if (key === "lists") {
-    await loadListsBackendState();
-    renderSimpleLists();
     return;
   }
   if (key === "finance") {
@@ -1006,13 +998,11 @@ async function loadBackendSession(session) {
     calendarRemoteState.loaded = false;
     workoutRemoteState.loaded = false;
     if (typeof resetWorkoutV2BackendState === "function") resetWorkoutV2BackendState();
-    listRemoteState.loaded = false;
     integrationRemoteState.loaded = false;
     setBackendAuthStatus("Backend: Supabase ready; sign in to sync modules");
     renderFinanceList();
     generateCalendar();
     renderWorkout();
-    renderSimpleLists();
     renderConnectionsStatus();
     return;
   }
@@ -1175,12 +1165,10 @@ async function refreshBackendFromServer() {
     calendarRemoteState.loaded = false;
     workoutRemoteState.loaded = false;
     if (typeof resetWorkoutV2BackendState === "function") resetWorkoutV2BackendState();
-    listRemoteState.loaded = false;
     setBackendAuthStatus(`Backend: reload failed (${describeBackendError(error)})`);
     renderFinanceList();
     generateCalendar();
     renderWorkout();
-    renderSimpleLists();
   }
 }
 
@@ -1315,7 +1303,6 @@ window.startpageBackendDiagnostics = function () {
     backendActive: isFinanceBackendActive(),
     calendarBackendActive: isCalendarBackendActive(),
     workoutBackendActive: isWorkoutBackendActive(),
-    listBackendActive: isListBackendActive(),
     integrationBackendActive: isIntegrationBackendActive(),
     email: backendState.session?.user?.email || "",
     userId: getBackendUserId(),
@@ -3844,319 +3831,13 @@ document.addEventListener("DOMContentLoaded", function () {
   renderFinanceList();
 });
 
-// REC LIST / NEXT FEATURES
-
-const RECOMMENDATIONS_STORAGE_KEY = "recs";
-const FEATURE_BACKLOG_STORAGE_KEY = "features";
-const LISTS_IMPORT_SCOPE = "lists_v1";
-const listRemoteState = {
-  loaded: false,
-  recommendations: [],
-  features: [],
-};
-
-function makeLocalListItemId(prefix) {
-  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-}
-
-function normalizeTextListItem(item, prefix) {
-  if (typeof item === "string") {
-    const text = item.trim();
-    if (!text) return null;
-    return {
-      id: makeLocalListItemId(prefix),
-      text,
-      createdAt: new Date().toISOString(),
-    };
-  }
-
-  if (!item || typeof item !== "object") return null;
-  const text = typeof item.text === "string" ? item.text.trim() : "";
-  if (!text) return null;
-  return {
-    id: typeof item.id === "string" && item.id.trim() ? item.id : makeLocalListItemId(prefix),
-    text,
-    createdAt:
-      typeof item.createdAt === "string" && item.createdAt
-        ? item.createdAt
-        : new Date().toISOString(),
-  };
-}
-
-function getLocalTextList(storageKey, prefix) {
-  let parsed = [];
-  try {
-    parsed = JSON.parse(localStorage.getItem(storageKey)) || [];
-  } catch (_error) {
-    parsed = [];
-  }
-  const items = Array.isArray(parsed)
-    ? parsed.map((item) => normalizeTextListItem(item, prefix)).filter(Boolean)
-    : [];
-  localStorage.setItem(storageKey, JSON.stringify(items));
-  return items;
-}
-
-function setLocalTextList(storageKey, prefix, items) {
-  const normalized = Array.isArray(items)
-    ? items.map((item) => normalizeTextListItem(item, prefix)).filter(Boolean)
-    : [];
-  localStorage.setItem(storageKey, JSON.stringify(normalized));
-}
-
-function isListBackendActive() {
-  return Boolean(backendState.client && backendState.session && listRemoteState.loaded);
-}
-
-function getRecommendations() {
-  return isListBackendActive()
-    ? listRemoteState.recommendations
-    : getLocalTextList(RECOMMENDATIONS_STORAGE_KEY, "rec");
-}
-
-function getFeatureBacklogItems() {
-  return isListBackendActive()
-    ? listRemoteState.features
-    : getLocalTextList(FEATURE_BACKLOG_STORAGE_KEY, "feature");
-}
-
-function setRecommendations(items) {
-  if (isListBackendActive()) {
-    listRemoteState.recommendations = items;
-    return;
-  }
-  setLocalTextList(RECOMMENDATIONS_STORAGE_KEY, "rec", items);
-}
-
-function setFeatureBacklogItems(items) {
-  if (isListBackendActive()) {
-    listRemoteState.features = items;
-    return;
-  }
-  setLocalTextList(FEATURE_BACKLOG_STORAGE_KEY, "feature", items);
-}
-
-function mapTextRowToItem(row, prefix) {
-  return normalizeTextListItem(
-    {
-      id: row.id,
-      text: row.text,
-      createdAt: row.created_at,
-    },
-    prefix,
-  );
-}
-
-async function createBackendTextItem(tableName, text) {
-  const userId = getBackendUserId();
-  if (!backendState.client || !userId) throw new Error("Supabase session missing");
-  return throwIfSupabaseError(
-    await backendState.client
-      .from(tableName)
-      .insert({ user_id: userId, text })
-      .select("id, text, created_at")
-      .single(),
-  );
-}
-
-async function deleteBackendTextItem(tableName, itemId) {
-  const userId = getBackendUserId();
-  if (!backendState.client || !userId || !itemId) return;
-  throwIfSupabaseError(
-    await backendState.client
-      .from(tableName)
-      .delete()
-      .eq("user_id", userId)
-      .eq("id", itemId),
-  );
-}
-
-async function importListsLocalDataOnce() {
-  if (hasBackendImportCompleted(LISTS_IMPORT_SCOPE)) return;
-  const userId = getBackendUserId();
-  if (!backendState.client || !userId) return;
-
-  for (const item of getLocalTextList(RECOMMENDATIONS_STORAGE_KEY, "rec")) {
-    await createBackendTextItem("recommendations", item.text);
-  }
-  for (const item of getLocalTextList(FEATURE_BACKLOG_STORAGE_KEY, "feature")) {
-    await createBackendTextItem("feature_backlog_items", item.text);
-  }
-
-  markBackendImportCompleted(LISTS_IMPORT_SCOPE);
-}
-
-async function loadListsBackendState() {
-  const userId = getBackendUserId();
-  if (!backendState.client || !userId) {
-    listRemoteState.loaded = false;
-    return;
-  }
-
-  const recRows = throwIfSupabaseError(
-    await backendState.client
-      .from("recommendations")
-      .select("id, text, created_at")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: true }),
-  );
-  const featureRows = throwIfSupabaseError(
-    await backendState.client
-      .from("feature_backlog_items")
-      .select("id, text, created_at")
-      .eq("user_id", userId)
-      .eq("status", "open")
-      .order("created_at", { ascending: true }),
-  );
-
-  listRemoteState.recommendations = (recRows || [])
-    .map((row) => mapTextRowToItem(row, "rec"))
-    .filter(Boolean);
-  listRemoteState.features = (featureRows || [])
-    .map((row) => mapTextRowToItem(row, "feature"))
-    .filter(Boolean);
-  listRemoteState.loaded = true;
-}
-
-function renderTextList(listId, items, removeHandler) {
-  const list = document.getElementById(listId);
-  if (!list) return;
-  list.innerHTML = "";
-  items.forEach((item) => {
-    const li = document.createElement("li");
-    li.appendChild(document.createTextNode(`>  ${item.text}`));
-
-    const deleteButton = document.createElement("button");
-    deleteButton.appendChild(document.createTextNode("x"));
-    deleteButton.onclick = function () {
-      void removeHandler(item.id);
-    };
-
-    li.appendChild(deleteButton);
-    list.appendChild(li);
-  });
-}
-
-function renderRecommendations() {
-  renderTextList("recList", getRecommendations(), removeRec);
-}
-
-function renderFeatureBacklog() {
-  renderTextList("featureList", getFeatureBacklogItems(), removeFeature);
-}
-
-function renderSimpleLists() {
-  renderRecommendations();
-  renderFeatureBacklog();
-}
-
-async function addRec() {
-  const recInput = document.getElementById("recInput");
-  if (!recInput) return;
-  const text = recInput.value.trim();
-  if (!text) return;
-
-  let item = {
-    id: makeLocalListItemId("rec"),
-    text,
-    createdAt: new Date().toISOString(),
-  };
-
-  if (isListBackendActive()) {
-    try {
-      item = mapTextRowToItem(await createBackendTextItem("recommendations", text), "rec");
-      listRemoteState.recommendations.push(item);
-    } catch (error) {
-      console.error("Recommendation DB add error:", error);
-      const localItems = getLocalTextList(RECOMMENDATIONS_STORAGE_KEY, "rec");
-      localItems.push(item);
-      setLocalTextList(RECOMMENDATIONS_STORAGE_KEY, "rec", localItems);
-      listRemoteState.recommendations.push(item);
-    }
-  } else {
-    const items = getLocalTextList(RECOMMENDATIONS_STORAGE_KEY, "rec");
-    items.push(item);
-    setLocalTextList(RECOMMENDATIONS_STORAGE_KEY, "rec", items);
-  }
-
-  recInput.value = "";
-  renderRecommendations();
-}
-
-async function removeRec(itemId) {
-  if (isListBackendActive()) {
-    try {
-      await deleteBackendTextItem("recommendations", itemId);
-    } catch (error) {
-      console.error("Recommendation DB delete error:", error);
-    }
-    listRemoteState.recommendations = listRemoteState.recommendations.filter(
-      (item) => item.id !== itemId,
-    );
-  } else {
-    setLocalTextList(
-      RECOMMENDATIONS_STORAGE_KEY,
-      "rec",
-      getLocalTextList(RECOMMENDATIONS_STORAGE_KEY, "rec").filter((item) => item.id !== itemId),
-    );
-  }
-  renderRecommendations();
-}
-
-async function addFeature() {
-  const featureInput = document.getElementById("featureInput");
-  if (!featureInput) return;
-  const text = featureInput.value.trim();
-  if (!text) return;
-
-  let item = {
-    id: makeLocalListItemId("feature"),
-    text,
-    createdAt: new Date().toISOString(),
-  };
-
-  if (isListBackendActive()) {
-    try {
-      item = mapTextRowToItem(await createBackendTextItem("feature_backlog_items", text), "feature");
-      listRemoteState.features.push(item);
-    } catch (error) {
-      console.error("Feature backlog DB add error:", error);
-      const localItems = getLocalTextList(FEATURE_BACKLOG_STORAGE_KEY, "feature");
-      localItems.push(item);
-      setLocalTextList(FEATURE_BACKLOG_STORAGE_KEY, "feature", localItems);
-      listRemoteState.features.push(item);
-    }
-  } else {
-    const items = getLocalTextList(FEATURE_BACKLOG_STORAGE_KEY, "feature");
-    items.push(item);
-    setLocalTextList(FEATURE_BACKLOG_STORAGE_KEY, "feature", items);
-  }
-
-  featureInput.value = "";
-  renderFeatureBacklog();
-}
-
-async function removeFeature(itemId) {
-  if (isListBackendActive()) {
-    try {
-      await deleteBackendTextItem("feature_backlog_items", itemId);
-    } catch (error) {
-      console.error("Feature backlog DB delete error:", error);
-    }
-    listRemoteState.features = listRemoteState.features.filter((item) => item.id !== itemId);
-  } else {
-    setLocalTextList(
-      FEATURE_BACKLOG_STORAGE_KEY,
-      "feature",
-      getLocalTextList(FEATURE_BACKLOG_STORAGE_KEY, "feature").filter(
-        (item) => item.id !== itemId,
-      ),
-    );
-  }
-  renderFeatureBacklog();
-}
-
-document.addEventListener("DOMContentLoaded", renderSimpleLists);
+// REC LIST / NEXT FEATURES / IDEAS used to live here.
+// They were note-shaped, so they are notes now: the notebook holds them and
+// the Notes window draws them. In the terminal:
+//   will note "the bear" --section "Rec List"
+//   will note "bit about uber drivers" --section "Videos Ideas"
+// The old Supabase rows (recommendations, feature_backlog_items) import into
+// those sections with `will import legacy.json`.
 
 // POMODORO
 
@@ -5322,131 +5003,13 @@ function setDailiesStatus(message) {
 // ROUTINE / TASKS / KANBAN render from data/routine.json + data/tasks.json
 // (tasks-projection.js). There is no input here anymore: `will task ...` and
 // `will done <routine>` own the data.
-// IDEAS (Video + Joke) - owned locally by Startpage
-
-const IDEA_VIDEOS_STORAGE_KEY = "ideaVideosList";
-const IDEA_JOKES_STORAGE_KEY = "ideaJokesList";
-
-function setIdeasSyncStatus(message) {
-  const status = document.getElementById("ideasSyncStatus");
-  if (status) status.textContent = message;
-}
-
-function getVideoIdeas() {
-  return getLocalTextList(IDEA_VIDEOS_STORAGE_KEY, "vididea");
-}
-
-function setVideoIdeas(items) {
-  setLocalTextList(IDEA_VIDEOS_STORAGE_KEY, "vididea", items);
-}
-
-function getJokeIdeas() {
-  return getLocalTextList(IDEA_JOKES_STORAGE_KEY, "jokeidea");
-}
-
-function setJokeIdeas(items) {
-  setLocalTextList(IDEA_JOKES_STORAGE_KEY, "jokeidea", items);
-}
-
-function renderIdeas() {
-  renderTextList("videoIdeaList", getVideoIdeas(), removeVideoIdea);
-  renderTextList("jokeIdeaList", getJokeIdeas(), removeJokeIdea);
-}
-
-function addIdea(category) {
-  const isVideo = category === "video";
-  const input = document.getElementById(isVideo ? "videoIdeaInput" : "jokeIdeaInput");
-  if (!input) return;
-  const text = input.value.trim();
-  if (!text) return;
-
-  const item = {
-    id: makeLocalListItemId(isVideo ? "vididea" : "jokeidea"),
-    text,
-    createdAt: new Date().toISOString(),
-  };
-  const items = isVideo ? getVideoIdeas() : getJokeIdeas();
-  items.push(item);
-  if (isVideo) setVideoIdeas(items);
-  else setJokeIdeas(items);
-  renderIdeas();
-  input.value = "";
-  setIdeasSyncStatus(`Saved "${text}".`);
-}
-
-function addVideoIdea() {
-  addIdea("video");
-}
-
-function addJokeIdea() {
-  addIdea("joke");
-}
-
-function removeIdea(category, itemId) {
-  const isVideo = category === "video";
-  const items = isVideo ? getVideoIdeas() : getJokeIdeas();
-  const item = items.find((candidate) => candidate.id === itemId);
-  if (!item) return;
-
-  const remaining = items.filter((candidate) => candidate.id !== itemId);
-  if (isVideo) setVideoIdeas(remaining);
-  else setJokeIdeas(remaining);
-  renderIdeas();
-  setIdeasSyncStatus(`Removed "${item.text}".`);
-}
-
-function removeVideoIdea(itemId) {
-  removeIdea("video", itemId);
-}
-
-function removeJokeIdea(itemId) {
-  removeIdea("joke", itemId);
-}
-
-document.addEventListener("DOMContentLoaded", function () {
-  renderIdeas();
-
-  const videoInput = document.getElementById("videoIdeaInput");
-  if (videoInput) {
-    videoInput.addEventListener("keydown", function (event) {
-      if (event.key === "Enter") addVideoIdea();
-    });
-  }
-
-  const jokeInput = document.getElementById("jokeIdeaInput");
-  if (jokeInput) {
-    jokeInput.addEventListener("keydown", function (event) {
-      if (event.key === "Enter") addJokeIdea();
-    });
-  }
-});
-
-// NOTES
-// The Notes window is READ-ONLY and lives in notes-projection.js: it draws
-// data/notes.json, exported by `will export` from the will notes store.
-// The old in-page editor (notes_sections via Supabase, titles + textareas) was
-// removed on purpose - capture happens in the terminal: `will note "..."`.
-
-/*DRAFT OF GENERIC FUNCTION FOR UP SKIL
-
-function skillUpXp(skill){ 
-	startTimer(2, function(skill) {
-
-	if (localStorage.getItem(`${skill} + Count`) === null || localStorage.getItem(`${skill} + Count`) === undefined) {
-		let skillCount = 1;
-		localStorage.setItem(`${skill} + Count`, skillCount);
-	        contentMeter.value = skillCount;
-	} else {
-		const originalCount = localStorage.getItem(`${skill} + Count`);
-		let skillCount = originalCount;
-		skillCount++;
-		localStorage.setItem(`${skill} + Count`, skillCount);
-		contentMeter.value = skillCount;
-	}
-});
-
-};
-*/
+// REC LIST / NEXT FEATURES / IDEAS used to live here.
+// They were note-shaped, so they are notes now: the notebook holds them and
+// the Notes window draws them. In the terminal:
+//   will note "the bear" --section "Rec List"
+//   will note "bit about uber drivers" --section "Videos Ideas"
+// The old Supabase rows (recommendations, feature_backlog_items) import into
+// those sections with `will import legacy.json`.
 
 // GAMIFY (skills) used to live here: board state in localStorage, trackers in
 // Supabase, the streak calendar and the daily counters. All of it is gone - the
