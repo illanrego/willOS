@@ -203,6 +203,36 @@ test("every migrated window has an exporter behind it", () => {
   });
 });
 
+test("every inline handler in index.html points at a defined function", () => {
+  // After a window loses its inputs, a stray onclick is the easiest way to leave
+  // the app half-broken. Check the handlers against all loaded scripts.
+  const scripts = [
+    "willos.js",
+    "workout-v2.js",
+    "workout-core.js",
+    "notes-core.js",
+    "projection-core.js",
+    "content-projection.js",
+    "notes-projection.js",
+    "planner-projection.js",
+    "tasks-projection.js",
+    "skills-projection.js",
+    "finance-projection.js",
+  ];
+  const sources = scripts.map((name) => fs.readFileSync(path.join(root, name), "utf8")).join("\n");
+
+  const called = new Set();
+  [...html.matchAll(/on\w+="([^"]+)"/g)].forEach((match) => {
+    [...match[1].matchAll(/([A-Za-z_$][\w$]*)\s*\(/g)].forEach((inner) => called.add(inner[1]));
+  });
+  const builtins = new Set(["if", "for", "while", "return", "this", "window", "document", "function", "new", "typeof", "catch"]);
+
+  [...called].filter((name) => !builtins.has(name)).forEach((name) => {
+    const defined = new RegExp(`(function\\s+${name}\\b|${name}\\s*=\\s*function|${name}\\s*=\\s*\\()`);
+    assert.match(sources, defined, `index.html calls ${name}() but nothing defines it`);
+  });
+});
+
 test("code assets are cache-busted and every local asset exists", () => {
   const refs = [...html.matchAll(/(?:src|href)="(?!https?:)([^"]+)"/g)].map((match) => match[1]);
   assert.ok(refs.length > 0);
