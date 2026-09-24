@@ -57,7 +57,9 @@ test("the finance ledger and its forms are gone from the shell", () => {
     assert.ok(!app.includes(gone), `willos.js still carries ${gone}`);
   }
   assert.ok(!app.includes("financeContainer: { key:"), "Finance must not be in the backend sync list");
-  assert.ok(!app.includes('"financeContainer",'), "Finance must not be in the sync-all list");
+  const syncAll = /const BACKEND_SYNC_ALL_CONTAINER_IDS = \[([^\]]*)\]/.exec(app);
+  assert.ok(syncAll, "the sync-all list is missing");
+  assert.ok(!syncAll[1].includes("financeContainer"), "Finance must not be in the sync-all list");
 });
 
 test("the projection reads data/finance.json and only reads", () => {
