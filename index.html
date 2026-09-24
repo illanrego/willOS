@@ -4,68 +4,830 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>willOS</title>
-    <link rel="stylesheet" href="willos.css?v=20260924-boot" />
-    <link rel="icon" href="./imagens/debianlogo.png?v=20260924-boot">
-    <script src="projection-core.js?v=20260924-boot" defer></script>
-    <script src="willos.js?v=20260924-boot" defer></script>
+    <link rel="stylesheet" href="willos.css?v=20260924-willos-fork" />
+    <link rel="stylesheet" href="workout-v2.css?v=20260924-willos-fork" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Roboto:wght@400&display=swap">
+    <link rel="stylesheet" href="win98.ttf">
+    <link rel="icon" href="./imagens/debianlogo.png">
+    <script src="config.js?v=20260924-willos-fork"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+    <script src="workout-core.js?v=20260924-willos-fork" defer></script>
+    <script src="notes-core.js?v=20260924-willos-fork" defer></script>
+    <script src="projection-core.js?v=20260924-willos-fork" defer></script>
+    <script src="content-projection.js?v=20260924-willos-fork" defer></script>
+    <script src="willos.js?v=20260924-willos-fork" defer></script>
+    <script src="workout-v2.js?v=20260924-willos-fork" defer></script>
   </head>
   <body>
-    <div id="bgContainer">
-      <header>
-        <div id="greetings">
-          <h1>willOS</h1>
-          <h3></h3>
-        </div>
-      </header>
+    <div id="bgContainer"  style="background-image: url('./imagens/windowsgreen.jpg')";>
+    <header>
+      <div id="greetings">
+        <h1>Bom dia, i!</h1>
+        <h3></h3>
+      </div>
+   </header>
+<!--  ICONES AREA DE TRABALHO --> 
+ <div class="icon-bar">
+ <div class="icon" id="pomodoroIconDiv" onclick="hideQuadro('skillsContainer')">
 
-      <!-- DESKTOP ICONS -->
-      <div class="icon-bar">
-        <div class="icon" id="contentIconDiv" onclick="hideQuadro('contentContainer')">
-          <img src="./imagens/98icons/w98_camera3_vid.ico" width="60">
-          <label>Content</label>
+
+
+
+      <img src="./imagens/98icons/w98_joystick.ico" width="60">
+      <label>Gamify</label>
+ </div>
+ <div class="icon" id="todoIconDiv" onclick="hideQuadro('dailiesContainer')">
+    <img src="./imagens/98icons/w98_wia_img_check.ico"  width="60">
+    <label>Dailies</label>
+ </div>
+ <div class="icon" id="todoListIconDiv" onclick="hideQuadro('todoContainer')">
+    <img src="./imagens/98icons/w98_message_tack.ico" width="60">
+    <label>To-do</label>
+ </div>
+ <div class="icon" id="contentIconDiv" onclick="hideQuadro('contentContainer')">
+    <img src="./imagens/98icons/w98_camera3_vid.ico" width="60">
+    <label>Content</label>
+ </div>
+ <div class="icon" id="calendarIconDiv" onclick="clearDisplay(), hideQuadro('calendarContainer')">
+     <img src="./imagens/w98_calendar.ico" width="60">
+     <label>calendar</label>
+ </div>
+ <div class="icon" id="recIconDiv" onclick="hideQuadro('recContainer')">
+    <img src="./imagens/w98_netshow_notransm.ico" width="60">
+    <label>rec list</label>
+ </div>
+ <div class="icon" id="workoutIconDiv" onclick="hideQuadro('workoutContainer')">
+    <img src="./imagens/98icons/w98_battery.ico" width="60">
+    <label>workout</label>
+ </div>
+ <div class="icon" id="chatIconDiv" onclick="hideQuadro('chatContainer')">
+    <img src="./imagens/98icons/w98_message_file.ico" width="60">
+    <label>Chat</label>
+ </div>
+ <div class="icon" id="kanbanIconDiv" onclick="hideQuadro('kanbanContainer')">
+    <img src="./imagens/98icons/w98_notepad_file.ico" width="60">
+    <label>Kanban</label>
+ </div>
+ <div class="icon" id="financeIconDiv" onclick="hideQuadro('financeContainer')">
+    <img src="./imagens/98icons/w98_calculator.ico" width="60">
+    <label>finance</label>
+ </div>
+  <div class="icon" id="notesIconDiv" onclick="hideQuadro('notesContainer')">
+     <img src="./imagens/98icons/w98_note.ico" width="60">
+     <label>Notes</label>
+  </div>
+  <div class="icon" id="plannerIconDiv" onclick="hideQuadro('plannerContainer')">
+     <img src="./imagens/98icons/w98_notepad_file.ico" width="60">
+     <label>Planner</label>
+  </div>
+  <div class="icon" id="connectionsIconDiv" onclick="hideQuadro('connectionsContainer')">
+     <img src="./imagens/98icons/w98_web_file.ico" width="60">
+     <label>system</label>
+  </div>
+   <div class="icon" id="llmUsageIconDiv" onclick="hideQuadro('llmUsageContainer')">
+      <img src="./imagens/98icons/w98_chip_ramdrive.ico" width="60">
+      <label>LLM Usage</label>
+   </div>
+  </div>
+
+<!-- MAIN FEATURES -->
+<!-- SKILLS --> 
+   <section>
+        <div class="quadros" id="skillsContainer" style="display: none">
+          <div class="titleBar">
+        <h2>Gamify</h2>
+        <button onclick="hideQuadro('skillsContainer')">x</button>
+        </div>
+<div id="flexSkills">
+        <div id="gamifyCalendarSection">
+          <div class="gamify-calendar-toolbar">
+            <span class="gamify-calendar-label">Streak calendar</span>
+          </div>
+          <div class="month-nav gamify-month-nav" id="gamifyMonthNav"></div>
+          <div class="gamify-streak-weekdays" aria-hidden="true">
+            <span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span><span>Su</span>
+          </div>
+          <div class="gamify-streak-calendar-wrap" id="gamifyStreakWrap">
+            <div id="gamifyStreakGrid" class="gamify-streak-grid"></div>
+            <svg id="gamifyStreakSvg" class="gamify-streak-svg" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg>
+          </div>
+        </div>
+        <div id="gamifySkillsColumn">
+        <div id="gamifySkillBoxesRow">
+        <div class="skillBox gamify-skill-card gamify-skill-card--active" data-skill="coding" role="button" tabindex="0" aria-pressed="true">
+                <div class="skillDetails">
+                    <div class="skillInfo">
+				    <label for="coding">Coding</label>
+                <img src="./imagens/98icons/w98_keyboard.ico" width="50" height="55"/>
+                    </div>
+<span class="infoRight"><p>lvl:<span id="lvl1">0</span> total:<span id="codingTotalCount">0</span>
+		today:<span id="dailyCountcoding">0</span>
+</p></span>
+
+                    <meter id="codingMeter" min="0" max="31" low="15" high="23" optimum="30" value="0"></meter>
+                </div>
+        </div>
+        <div class="skillBox gamify-skill-card" data-skill="fitness" role="button" tabindex="0" aria-pressed="false">
+              <div class="skillDetails">
+                  <div class="skillInfo">
+			      <label for="physical education">Physique</label>
+                <img src="./imagens/98icons/w98_battery.ico" width="50" height="55"/>
+                  </div>
+<span class="infoRight"><p>lvl:<span id="lvl2">0</span> total:<span id="fitnessTotalCount">0</span>
+		today:<span id="dailyCountfitness">0</span>
+</p></span>
+	                  <meter id="fitnessMeter" min="0" max="7" low="2" high="6" value="0"></meter>
+	              </div>
+          </div>
+        <div class="skillBox gamify-skill-card" data-skill="content" role="button" tabindex="0" aria-pressed="false">
+              <div class="skillDetails">
+                  <div class="skillInfo">
+			      <label for="content">Content</label>
+                <img src="./imagens/98icons/w98_camera3_vid.ico" width="50" height="55"/>
+                  </div>
+<span class="infoRight"><p>lvl:<span id="lvl4">0</span> total:<span id="contentTotalCount">0</span>
+		today:<span id="dailyCountcontent">0</span>
+</p></span>
+	                  <meter id="contentMeter" min="0" max="7" low="2" high="6" value="0"></meter>
+	              </div>
+          </div>
+        <div class="skillBox gamify-skill-card" data-skill="standup" role="button" tabindex="0" aria-pressed="false">
+              <div class="skillDetails">
+                  <div class="skillInfo">
+			      <label for="standup">Stand Up</label>
+                <img src="./imagens/98icons/w98_microphone_2.ico" width="50" height="55"/>
+                  </div>
+<span class="infoRight"><p>lvl:<span id="lvl5">0</span> total:<span id="standupTotalCount">0</span>
+		today:<span id="dailyCountstandup">0</span>
+</p></span>
+	                  <meter id="standupMeter" min="0" max="7" low="2" high="6" value="0"></meter>
+	              </div>
+          </div>
+        <div class="skillBox gamify-skill-card" data-skill="meditation" role="button" tabindex="0" aria-pressed="false">
+              <div class="skillDetails">
+                  <div class="skillInfo">
+			      <label for="meditation">Meditation</label>
+                <img src="./imagens/98icons/w98_clock.ico" width="50" height="55"/>
+                  </div>
+<span class="infoRight"><p>lvl:<span id="lvl3">0</span> total:<span id="meditationTotalCount">0</span>
+		today:<span id="dailyCountmeditation">0</span>
+</p></span>
+	                  <meter id="meditationMeter" min="0" max="7" low="2" high="6" value="0"></meter>
+	              </div>
+          </div>
+        <div class="skillBox gamify-skill-card" data-skill="jobhunting" role="button" tabindex="0" aria-pressed="false">
+              <div class="skillDetails">
+                  <div class="skillInfo">
+			      <label for="jobhunting">Job Hunting</label>
+                <img src="./imagens/98icons/w98_certificate.ico" width="50" height="55"/>
+                  </div>
+<span class="infoRight"><p>lvl:<span id="lvl6">0</span> total:<span id="jobhuntingTotalCount">0</span>
+		today:<span id="dailyCountjobhunting">0</span>
+</p></span>
+	                  <meter id="jobhuntingMeter" min="0" max="7" low="2" high="6" value="0"></meter>
+	              </div>
+          </div>
+        </div>
+        </div>
+	</div>
+	  </div>
+	<!-- DAILIES -->
+		<div class="quadros" id="dailiesContainer" style="display: none">
+		  <div class="titleBar">
+	          <h2>Dailies</h2>
+	          <button onclick="hideQuadro('dailiesContainer')">x</button>
+	           </div>
+      <div id="dailiesWindowBody">
+        <div id="dailiesStatusSection">
+          <p id="dailiesStatus">Ready.</p>
+          <div id="tasklistContainer">
+            <ul id="dailiesList"></ul>
+          </div>
+        </div>
+			  <div id="addDailyContainer">
+                <input type="text" id="dailyInput" placeholder="Add daily">
+                <select id="dailySkillSelect" aria-label="Daily skill mapping">
+                  <option value="">No skill</option>
+                  <option value="coding">Coding</option>
+                  <option value="fitness">Physique</option>
+                  <option value="content">Content</option>
+                  <option value="standup">Stand Up</option>
+                  <option value="meditation">Meditation</option>
+                  <option value="jobhunting">Job Hunting</option>
+                </select>
+	        		<button onclick="addDaily()">+</button>
+			  </div>
+      </div>
+			</div>
+<!-- CONTENT BOARD -->
+      <div class="quadros" id="contentContainer" style="display: none">
+        <div class="titleBar">
+          <h2>Content</h2>
+          <button onclick="hideQuadro('contentContainer')">x</button>
+        </div>
+        <div id="contentWindowBody">
+          <div class="content-toolbar">
+            <span class="gamify-calendar-label">Posted lanes</span>
+            <div id="contentLaneLegend" class="content-lane-legend"></div>
+          </div>
+          <div class="month-nav content-month-nav" id="contentMonthNav"></div>
+          <div class="gamify-streak-weekdays" aria-hidden="true">
+            <span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span><span>Su</span>
+          </div>
+          <div class="content-board-wrap">
+            <div id="contentBoardGrid" class="content-board-grid"></div>
+          </div>
+          <p id="contentStatus" class="content-status">Ready.</p>
         </div>
       </div>
-
-      <!-- WINDOWS -->
-      <section>
-        <div class="quadros" id="contentContainer" style="display: none">
-          <div class="titleBar">
-            <h2>Content</h2>
-            <button onclick="hideQuadro('contentContainer')">x</button>
+<!-- TODO-->
+      <div id="todoContainer" class="quadros" style="display: none">
+        <div class="titleBar">
+          <h2>To-do List</h2>
+          <button onclick="hideQuadro('todoContainer')">x</button>
+        </div>
+        <div id="todoPanel">
+          <div id="todoToolbar">
+            <input type="text" id="taskInput" placeholder="Add task">
+            <button id="todoAddBtn" onclick="addTask()">+</button>
           </div>
-          <div id="contentWindowBody">
-            <div class="content-toolbar">
-              <span class="gamify-calendar-label">Posted lanes</span>
-              <div id="contentLaneLegend" class="content-lane-legend"></div>
+          <p id="todoStatus">Ready.</p>
+          <ul id="taskList"></ul>
+        </div>
+      </div>
+<!-- PLANNER -->
+      <div id="plannerContainer" class="quadros" style="display: none">
+        <div class="titleBar">
+          <h2>Planner</h2>
+          <button onclick="hideQuadro('plannerContainer')">x</button>
+        </div>
+        <div id="plannerPanel">
+          <div class="planner-status-card">
+            <div>
+              <label for="plannerTitleInput">Plan</label>
+              <input type="text" id="plannerTitleInput" placeholder="Plan title">
             </div>
-            <div class="month-nav content-month-nav" id="contentMonthNav"></div>
-            <div class="gamify-streak-weekdays" aria-hidden="true">
-              <span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span><span>Su</span>
+            <div>
+              <label for="plannerStartInput">Start</label>
+              <input type="date" id="plannerStartInput">
             </div>
-            <div class="content-board-wrap">
-              <div id="contentBoardGrid" class="content-board-grid"></div>
+            <div>
+              <label for="plannerEndInput">End</label>
+              <input type="date" id="plannerEndInput">
             </div>
-            <p id="contentStatus" class="content-status">Booting.</p>
+          </div>
+          <label for="plannerSummaryInput">Note</label>
+          <textarea id="plannerSummaryInput" rows="10" placeholder="What this horizon is about, in your own words."></textarea>
+          <div id="plannerToolbar">
+            <button id="plannerSaveBtn" type="button" onclick="savePlanner()">save</button>
+            <span id="plannerSyncStatus">Ready.</span>
           </div>
         </div>
-      </section>
+      </div>
+<!-- REC LIST -->
+      <div id="recContainer" class="quadros" style="display: none">
+        <div class="titleBar">
+          <h2>Rec List</h2>
+          <button onclick="hideQuadro('recContainer')">x</button>
+           </div>
+       <div id="addRecContainer">
+        <input type="text" id="recInput" placeholder="Enter rec">
+        <button onclick="addRec()">+</button>
+      </div>
+        <ul id="recList"></ul>
+      </div>
+<!-- IDEAS -->
+      <div id="ideasContainer" class="quadros" style="display: none">
+        <div class="titleBar">
+          <h2>Ideas</h2>
+          <button onclick="hideQuadro('ideasContainer')">x</button>
+        </div>
+        <div id="ideasPanel">
+          <div id="videoIdeasColumn">
+            <div class="ideas-column-title">Video Ideas</div>
+            <div class="ideas-add-row">
+              <input type="text" id="videoIdeaInput" placeholder="Add video idea...">
+              <button onclick="addVideoIdea()">+</button>
+            </div>
+            <ul id="videoIdeaList" class="ideas-list"></ul>
+          </div>
+          <div id="jokeIdeasColumn">
+            <div class="ideas-column-title">Joke Ideas</div>
+            <div class="ideas-add-row">
+              <input type="text" id="jokeIdeaInput" placeholder="Add joke idea...">
+              <button onclick="addJokeIdea()">+</button>
+            </div>
+            <ul id="jokeIdeaList" class="ideas-list"></ul>
+          </div>
+        </div>
+        <p id="ideasSyncStatus" class="ideas-sync-status"></p>
+      </div>
+<!-- NOTES -->
+      <div class="quadros" id="notesContainer" style="display: none">
+        <div class="titleBar">
+          <h2>Notes</h2>
+          <button onclick="hideQuadro('notesContainer')">x</button>
+        </div>
+        <div id="notesPanel">
+          <p id="notesStatus">Ready.</p>
+          <div id="notesSections"></div>
+        </div>
+      </div>
+<!-- WORKOUT -->
+    <div id="workoutContainer" class="quadros" style="display: none">
+      <div class="titleBar">
+      <h2>Workout</h2>
+      <button onclick="hideQuadro('workoutContainer')">x</button>
+     </div>
+     <div id="workoutTableDiv">
+      </div>
+    </div>
+<!-- CALENDARIO -->
+      <div class="quadros" id="calendarContainer"  style="display: none">
+        <div class="titleBar">
+          <h2 id="calendarTitle">Calendário</h2>
+          <button onclick="hideQuadro('calendarContainer')">x</button>
+           </div>
+        <div id="weekGraph"></div>
+      </div>
+<!--  POMODORO -->
+    <div class="quadros" id="pomodoro"  style="display: none">
+      <div class="titleBar">
+        <h2>Pomodoro</h2>
+        <button onclick="hideQuadro('pomodoro')">x</button>
+         </div>
+        <div id="timer-container">
+          <div class="subSection" id="pomodoroSection">
+          <img src="./imagens/tomato.png" alt="ilustração de tomate"  height="60"/>
+          <div id="timer">25:00</div>
+          </div>
+          <div id="buttons">
+            <button onclick="startTimer(25)">Start</button>
+            <button onclick="startTimer(5)">Short Rest</button>
+            <button onclick="startTimer(30)">Long Rest</button>
+            <button onclick="resetTimer()">Stop</button>
+          </div>
+          <div id="custom-timer">
+            <input type="number" id="customMinutes" placeholder="Custom minutes" min="1">
+            <button onclick="startCustomTimer()">Start Custom</button>
+            <button id="pauseButton" onclick="togglePause()">Pause</button>
+          </div>
+        </div>
+    </div>
 
-      <!-- TASKBAR -->
-      <div id="linkContainer">
-        <button id="startBtn" onclick="hideAppMenu(), clickStart()">
-          <img src="./imagens/debianlogo.png" width="20" height="25" alt="debian logo">
-          Iniciar
-        </button>
+  <div class="quadros" id="nextFeatures" style="display: none">
+    <div class="titleBar">
+     <h2>Next Features</h2>
+     <button onclick="hideQuadro('nextFeatures')">x</button>
+    </div>
+	<input type="text" id="featureInput" placeholder="Enter Feature">
+        <button onclick="addFeature()">+</button>
+        <ul id="featureList"></ul>
+  </div>
+  <div class="quadros" id="connectionsContainer" style="display: none">
+    <div class="titleBar">
+      <h2>Connections</h2>
+      <button onclick="hideQuadro('connectionsContainer')">x</button>
+    </div>
+    <div id="connectionsPanel">
+      <div id="backendAuthPanel">
+        <span id="backendAuthStatus">Backend: local mode</span>
+        <input type="email" id="backendAuthEmailInput" placeholder="email" autocomplete="email">
+        <input type="password" id="backendAuthPasswordInput" placeholder="password" autocomplete="current-password">
+        <button id="backendAuthSendBtn" type="button">login</button>
+        <button id="backendAuthCreateBtn" type="button">create</button>
+        <button id="backendAuthResetBtn" type="button">reset</button>
+        <button id="backendReloadBtn" type="button" hidden>sync all</button>
+        <button id="backendAuthSignOutBtn" type="button" hidden>logout</button>
+      </div>
+      <div id="connectionsToolbar">
+        <button id="connectionsRefreshBtn" type="button">refresh</button>
+      </div>
+      <ul id="connectionsStatusList"></ul>
+    </div>
+  </div>
+  <div class="quadros" id="llmUsageContainer" style="display: none">
+    <div class="titleBar">
+      <h2>LLM Usage</h2>
+      <button onclick="hideQuadro('llmUsageContainer')">x</button>
+    </div>
+    <div id="llmUsagePanel">
+      <div id="llmUsageToolbar">
+        <button id="llmUsageRefreshBtn" type="button">refresh</button>
+        <span id="llmUsageStatus"></span>
+      </div>
+      <div id="llmUsageCards">
+        <div class="llm-usage-card" id="deepseekUsageCard">
+          <h4>DeepSeek</h4>
+          <div class="llm-usage-body" id="deepseekUsageBody">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+    </section>
+<!--  TASKBAR -->
+    <div id="linkContainer">
+      <button id="startBtn" onclick="hideAppMenu(), clickStart()">
+        <img src="./imagens/debianlogo.png"
+             width="20" height="25" alt="icone do debian linux">
+             Iniciar
+      </button>
         <div class="barDivider"></div>
         <div class="barDividerFat"></div>
+      <div id="linksBar">
+        <a title="spotify" href="https://open.spotify.com" target="_blank">
+            <img src="./imagens/spotify-logo.png" alt="ícone do spotify" width="30" height="28">
+          </a> 
+        <a title="chatgpt" href="https://chatgpt.com/?oai-dm=1" target="_blank">
+            <img src="./imagens/chatgpt.png" alt="ícone do chatgpt" width="30" height="28">
+          </a> 
+        <a href="https://web.whatsapp.com/" target="_blank">
+          <img src="./imagens/wpp.png" alt="ícone do whatsapp" width="30" height="28">
+        </a> 
+         <a title="wikipedia" href="https://en.wikipedia.org" target="_blank">
+            <img src="./imagens/wikipedia.png" alt="ícone do wikipedia" width="30" height="28">
+        </a>
+	<a title="dhammapada (verse of the day)" href="https://www.tipitaka.net/tipitaka/dhp/verseload.php?verse=001" target="_blank">
+            <img src="./imagens/buddha.png" alt="ícone buda" width="30" height="28">
+          </a> 
+        <a href="https://www.freecodecamp.org/learn" target="_blank">
+          <img src="./imagens/fcc2.png" alt="ícone do free code camp" width="30" height="28">
+        </a>
+        <a href="https://developer.mozilla.org/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/React_interactivity_events_state" target="_blank">
+          <img src="./imagens/mdn1.png" alt="ícone do MDN" width="30" height="28">
+        </a>
+        <a href="https://github.com" target="_blank">
+          <img src="./imagens/github.png" alt="ícone do git" width="30" height="28">
+        </a>
+        <a href="https://www.reddit.com/r/Frontend//" target="_blank">
+          <img src="./imagens/reddit.png" alt="ícone do reddit" width="30" height="28">
+        </a>
+        <a href="https://youtube.com" target="_blank">
+          <img src="./imagens/yt.png" alt="ícone do youtube" width="30" height="28">
+        </a>
+        <a href="https://twitter.com" target="_blank">
+          <img src="./imagens/twitter.png" alt="ícone do twitter" width="30" height="28">
+        </a>
+        <a href="https://opensubtitles.org" target="_blank">
+          <img src="./imagens/opensub.png" alt="icone do opensubtitles" width="33" height="28">
+        </a>
+        <a href="https://apod.nasa.gov/apod/astropix.html" target="_blank">
+          <img src="./imagens/nasa.jpg" alt="icone da nasa" width="30" height="28">
+        </a>
+        <div class="clock">
+          <span id="hours"></span><span id="minutes"></span><span id="seconds"></span>
+        </div>
       </div>
-
-      <!-- START BUTTON MENU -->
-      <div id="appMenu" class="quadros">
+    </div>
+  <section>
+	  <!-- MORE FEATURES -->
+       <!-- CALCULADORA -->
+  <div class="quadros" id="calcContainer" style="display: none">
+    <div class="titleBar">
+      <h2>Calculadora JS</h2>
+      <button onclick="hideQuadro('calcContainer'), clearDisplay()">x</button>
+    </div>
+<div id="calculator">
+  <input type="text" id="display" readonly>
+  <br>
+  <input type="button" value="1" onclick="appendToDisplay('1')">
+  <input type="button" value="'2'" onclick="appendToDisplay('2')">
+  <input type="button" value="3" onclick="appendToDisplay('3')">
+  <input type="button" value="*" onclick="appendToDisplay('*')">
+  <br>
+  <input type="button" value="'4'" onclick="appendToDisplay('4')">
+  <input type="button" value="5" onclick="appendToDisplay('5')">
+  <input type="button" value="6" onclick="appendToDisplay('6')">
+  <input type="button" value="/" onclick="appendToDisplay('/')">
+  <br>
+  <input type="button" value="7" onclick="appendToDisplay('7')">
+  <input type="button" value="'8'" onclick="appendToDisplay('8')">
+  <input type="button" value="9" onclick="appendToDisplay('9')">
+  <input type="button" value="+" onclick="appendToDisplay('+')">
+  <br>
+  <input type="button" value="C" onclick="clearDisplay()">
+  <input type="button" value="0" onclick="appendToDisplay('0')">
+  <input type="button" value="=" onclick="toDisplay('NaN')">
+  <input type="button" value="-" onclick="appendToDisplay('-')">
+  <!-- <input type="button" value="=" onclick="calculate()"-->
+</div>
+</div>
+<!--  WALLPAPER OPTION -->
+<div class="quadros" id="wallpContainer" style="display: none">
+  <div class="titleBar">
+    <h2>Papel de Parede</h2>
+    <button onclick="hideQuadro('wallpContainer')">x</button>
+     </div>
+  <fieldset>
+    <legend>Selecione um Papel de Parede</legend>
+      <select id="selectWallp">
+        <option value="0">XP</option>
+        <option value="1">98</option>
+        <option value="2">Clouds</option>
+	<option value="3">Janeiro</option>
+	<option value="4">Fevereiro</option>
+	<option value="5">Março</option>
+	<option value="6">Abril</option>
+	<option value="7">Maio</option>
+	<option value="8">Junho</option>
+	<option value="9">Julho</option>
+	<option value="10">Agosto</option>
+	<option value="11">Setembro</option>
+	<option value="12">Outubro</option>
+	<option value="13">Novembro</option>
+	<option value="14">Dezembro</option>
+      </select>
+    </fieldset>
+    <button onclick="removeWallp()">Restaurar Padrão</button>
+</div>
+<!-- CHATBOT -->
+<div class="quadros" id="chatContainer" style="display: none">
+  <div class="titleBar">
+    <h2>Chat Assistant</h2>
+    <button onclick="resetChat()" title="New Chat">↺</button>
+    <button onclick="hideQuadro('chatContainer')">x</button>
+  </div>
+  <div id="chatMessages"></div>
+  <div id="chatInputArea">
+    <div class="chat-provider-row">
+      <label for="chatProviderSelect">Provider</label>
+      <select id="chatProviderSelect" title="Choose the model provider for this message">
+        <option value="openai">OpenAI</option>
+        <option value="gemini">Gemini</option>
+        <option value="deepseek">DeepSeek V3</option>
+        <option value="llama">Llama 3.2 3B (Local)</option>
+      </select>
+    </div>
+    <div class="chat-toolbar">
+      <button onclick="toggleEmojiBoard()">😊</button>
+      <button>🎵</button>
+      <button>A</button>
+      <button>📎</button>
+    </div>
+    <div id="emojiBoard" style="display: none">
+      <div class="emoji-category">
+        <span onclick="insertEmoji('😊')">😊</span>
+        <span onclick="insertEmoji('😂')">😂</span>
+        <span onclick="insertEmoji('😍')">😍</span>
+        <span onclick="insertEmoji('🤔')">🤔</span>
+        <span onclick="insertEmoji('😎')">😎</span>
+        <span onclick="insertEmoji('😉')">😉</span>
+        <span onclick="insertEmoji('🙂')">🙂</span>
+        <span onclick="insertEmoji('😋')">😋</span>
+      </div>
+      <div class="emoji-category">
+        <span onclick="insertEmoji('👍')">👍</span>
+        <span onclick="insertEmoji('👋')">👋</span>
+        <span onclick="insertEmoji('🎮')">🎮</span>
+        <span onclick="insertEmoji('💻')">💻</span>
+        <span onclick="insertEmoji('🌟')">🌟</span>
+        <span onclick="insertEmoji('❤️')">❤️</span>
+        <span onclick="insertEmoji('✨')">✨</span>
+        <span onclick="insertEmoji('🎵')">🎵</span>
+      </div>
+    </div>
+    <div class="message-input-container">
+      <textarea id="chatInput" placeholder="Type a message..."></textarea>
+      <button onclick="sendChatMessage()">Send</button>
+    </div>
+  </div>
+</div>
+<!-- KANBAN -->
+<div class="quadros" id="clickupContainer" style="display: none">
+  <div class="titleBar">
+    <h2>ClickUp Tasks</h2>
+    <button onclick="hideQuadro('clickupContainer')">x</button>
+  </div>
+  <div id="clickupPanel">
+    <div id="clickupToolbar">
+      <button id="clickupRefreshBtn" type="button">sync</button>
+      <label for="clickupIncludeClosedToggle">
+        <input type="checkbox" id="clickupIncludeClosedToggle">
+        closed
+      </label>
+      <label for="clickupMineToggle">
+        <input type="checkbox" id="clickupMineToggle">
+        mine
+      </label>
+      <button id="clickupPrevPageBtn" type="button">prev</button>
+      <span id="clickupPageLabel">page 1</span>
+      <button id="clickupNextPageBtn" type="button">next</button>
+    </div>
+    <p id="clickupSyncStatus">Ready.</p>
+    <ul id="clickupTaskList"></ul>
+  </div>
+</div>
+<div class="quadros" id="kanbanContainer" style="display: none">
+  <div class="titleBar">
+    <h2>Kanban Board</h2>
+    <button onclick="hideQuadro('kanbanContainer')">x</button>
+  </div>
+  <div class="kanban-board">
+    <div class="kanban-column">
+      <h3>To Do</h3>
+      <div id="todoColumn" class="kanban-items">
+        <div class="add-task">
+          <input type="text" id="todoInput" placeholder="Add task...">
+          <button onclick="addKanbanTask('todo')">+</button>
+        </div>
+      </div>
+    </div>
+    <div class="kanban-column">
+      <h3>In Progress</h3>
+      <div id="inProgressColumn" class="kanban-items">
+        <div class="add-task">
+          <input type="text" id="inProgressInput" placeholder="Add task...">
+          <button onclick="addKanbanTask('inProgress')">+</button>
+        </div>
+      </div>
+    </div>
+    <div class="kanban-column">
+      <h3>Done</h3>
+      <div id="doneColumn" class="kanban-items">
+        <div class="add-task">
+          <input type="text" id="doneInput" placeholder="Add task...">
+          <button onclick="addKanbanTask('done')">+</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="quadros" id="financeContainer" style="display: none">
+  <div class="titleBar">
+    <h2>Finance Log</h2>
+    <button onclick="hideQuadro('financeContainer')">x</button>
+  </div>
+  <div id="financePanel">
+    <div id="financeMonthBar">
+      <button id="financePrevMonthBtn" type="button">←</button>
+      <input type="month" id="financeMonthInput">
+      <button id="financeNextMonthBtn" type="button">→</button>
+    </div>
+    <div id="financeTabs" role="tablist" aria-label="Finance sections">
+      <button id="financeLogsTabBtn" class="finance-tab-btn finance-tab-btn--active" type="button" data-target="financeLogsSection" role="tab" aria-selected="true">Logs</button>
+      <button id="financeBudgetTabBtn" class="finance-tab-btn" type="button" data-target="financeBudgetSection" role="tab" aria-selected="false">Budget</button>
+      <button id="financeRecurringTabBtn" class="finance-tab-btn" type="button" data-target="financeRecurringSection" role="tab" aria-selected="false">Recurring</button>
+      <button id="financeSpentTabBtn" class="finance-tab-btn" type="button" data-target="financeSpentSection" role="tab" aria-selected="false">Spent</button>
+    </div>
+    <div id="financeLogsSection" class="finance-section finance-section--active" role="tabpanel">
+      <div class="finance-section-heading">quick log</div>
+      <div id="financeForm">
+        <div id="financeTypeToggle" role="group" aria-label="Log type">
+          <button id="financeExpenseTypeBtn" class="finance-type-btn finance-type-btn--active" type="button" data-finance-type="expense" aria-pressed="true">Expense</button>
+          <button id="financeIncomeTypeBtn" class="finance-type-btn" type="button" data-finance-type="income" aria-pressed="false">Income</button>
+          <select id="financeTypeInput" aria-hidden="true" tabindex="-1">
+            <option value="expense" selected>expense</option>
+            <option value="income">income</option>
+          </select>
+        </div>
+        <label class="finance-entry-field finance-amount-field" for="financeAmountInput">
+          <span>How much?</span>
+          <span class="finance-amount-input-wrap">
+            <span class="finance-currency-prefix">R$</span>
+            <input type="number" id="financeAmountInput" step="0.01" min="0.01" inputmode="decimal" placeholder="0,00">
+          </span>
+        </label>
+        <label class="finance-entry-field finance-note-field" for="financeNoteInput">
+          <span>What was it? <small>optional</small></span>
+          <input type="text" id="financeNoteInput" placeholder="e.g. groceries">
+        </label>
+        <fieldset id="financeCategoryPicker">
+          <legend>Category</legend>
+          <div id="financeCategoryChips"></div>
+          <select id="financeCategoryInput" aria-label="Selected expense category" hidden></select>
+        </fieldset>
+        <details id="financeEntryDetails">
+          <summary>Change date</summary>
+          <label for="financeDateInput">Transaction date</label>
+          <input type="date" id="financeDateInput">
+        </details>
+        <button id="financeAddBtn" type="button">Save expense</button>
+        <p id="financeEntryStatus" role="status" aria-live="polite">Expense selected. Add an amount and choose a category.</p>
+      </div>
+      <div id="financeTotals" aria-live="polite">
+        <span>income: <strong id="financeIncomeTotal">R$ 0,00</strong></span>
+        <span>expense: <strong id="financeExpenseTotal">R$ 0,00</strong></span>
+        <span>net: <strong id="financeNetTotal">R$ 0,00</strong></span>
+      </div>
+      <div class="finance-section-heading">month logs</div>
+      <ul id="financeList"></ul>
+      <details id="financeBalanceDetails">
+        <summary>Balance setup and reconciliation</summary>
+        <div id="financeBalancePanel">
+          <div id="financeBalanceControls">
+            <label for="financeOpeningDateInput">opening date</label>
+            <input type="date" id="financeOpeningDateInput">
+            <label for="financeOpeningAmountInput">opening amount</label>
+            <input type="number" id="financeOpeningAmountInput" step="0.01" placeholder="R$ 0,00">
+            <button id="financeOpeningBalanceSaveBtn" type="button">save</button>
+            <button id="financeBalanceReconcileBtn" type="button">reconcile</button>
+          </div>
+          <div id="financeBalanceSummary" aria-live="polite">
+            <span>current balance: <strong id="financeCurrentBalance">Set starting balance</strong></span>
+            <span>projected month-end balance: <strong id="financeProjectedMonthEndBalance">Set starting balance</strong></span>
+          </div>
+          <div id="financeBalanceEmptyState">Set starting balance to calculate current money across all finance logs.</div>
+        </div>
+      </details>
+    </div>
+    <div id="financeBudgetSection" class="finance-section" role="tabpanel" hidden>
+      <div id="financeBudgetPanel">
+        <div class="finance-section-heading">monthly budget</div>
+        <div id="financeBudgetControls">
+          <label for="financeMonthlyBudgetInput">monthly budget</label>
+          <input type="number" id="financeMonthlyBudgetInput" step="0.01" min="0" placeholder="R$ 0,00">
+          <button id="financeBudgetSaveBtn" type="button">save</button>
+        </div>
+        <div id="financeBudgetModeBar">
+          <span id="financeBudgetModeLabel">using default budget</span>
+          <button id="financeCopyDefaultBudgetBtn" type="button">copy default to month</button>
+          <button id="financeSaveAsDefaultBudgetBtn" type="button">save month as default</button>
+          <button id="financeResetMonthBudgetBtn" type="button">reset month</button>
+        </div>
+        <div class="finance-section-heading">categories</div>
+        <div id="financeCategoryCreateRow">
+          <input type="text" id="financeCategoryNameInput" placeholder="Category name">
+          <input type="number" id="financeCategoryAllocInput" step="0.01" min="0" placeholder="Allocation">
+          <button id="financeCategoryAddBtn" type="button">+</button>
+        </div>
+        <div id="financeBudgetSummary">
+          <span>allocated: <strong id="financeAllocatedTotal">R$ 0,00</strong></span>
+          <span>remaining: <strong id="financeRemainingBudget">R$ 0,00</strong></span>
+        </div>
+        <div id="financePartitionArea">
+          <svg id="financePartitionPie" viewBox="0 0 220 220" aria-label="Budget partitions"></svg>
+          <ul id="financePartitionLegend"></ul>
+        </div>
+        <ul id="financeCategoryList"></ul>
+      </div>
+    </div>
+    <div id="financeRecurringSection" class="finance-section" role="tabpanel" hidden>
+      <div id="financeRecurringPanel">
+        <div class="finance-section-heading">recurring income and expenses</div>
+        <div id="financeRecurringForm">
+          <select id="financeRecurringTypeInput">
+            <option value="income">income</option>
+            <option value="expense">expense</option>
+          </select>
+          <select id="financeRecurringCategoryInput"></select>
+          <input type="number" id="financeRecurringAmountInput" step="0.01" min="0" placeholder="Amount">
+          <input type="text" id="financeRecurringNoteInput" placeholder="Note">
+          <input type="number" id="financeRecurringDayInput" min="1" max="31" placeholder="Day">
+          <input type="month" id="financeRecurringStartInput">
+          <input type="month" id="financeRecurringEndInput">
+          <button id="financeRecurringAddBtn" type="button">+</button>
+        </div>
+        <ul id="financeRecurringList"></ul>
+      </div>
+    </div>
+    <div id="financeSpentSection" class="finance-section" role="tabpanel" hidden>
+      <div id="financeSpentPanel">
+        <div class="finance-section-heading">spent breakdown</div>
+        <div id="financeSpentSummary">
+          <span>income this month: <strong id="financeIncomeTotalMonth">R$ 0,00</strong></span>
+          <span>invoices this month: <strong id="financeInvoicesTotalMonth">R$ 0,00</strong></span>
+          <span>spent this month: <strong id="financeSpentTotalMonth">R$ 0,00</strong></span>
+          <span>budget used: <strong id="financeSpentBudgetProgress">0%</strong></span>
+          <span>projected income: <strong id="financeProjectedIncomeTotal">R$ 0,00</strong></span>
+          <span>projected expense: <strong id="financeProjectedExpenseTotal">R$ 0,00</strong></span>
+          <span>projected net: <strong id="financeProjectedNetTotal">R$ 0,00</strong></span>
+        </div>
+        <div id="financeSpentPartitionArea">
+          <svg id="financeSpentPie" viewBox="0 0 220 220" aria-label="Spent by category"></svg>
+          <ul id="financeSpentLegend"></ul>
+        </div>
+        <div id="financeSpentDetailPanel">
+          <div id="financeSpentDetailTitle">category logs: none selected</div>
+          <ul id="financeSpentDetailList"></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- START BUTTON MENU -->
+  </section>
+    <div id="appMenu" class="quadros">
         <ul>
-          <li onclick="hideQuadro('contentContainer'), hideAppMenu(), clickStart()"><img src="./imagens/98icons/w98_camera3_vid.ico" width="35" height="35">Content</li>
-        </ul>
-      </div>
+            <li onclick="hideQuadro('recContainer'), hideAppMenu(), clickStart()"><img src="./imagens/98icons/w98_netshow_notransm.ico" width="35" height="35">Rec List</li>
+            <li onclick="hideQuadro('workoutContainer'), hideAppMenu(), clickStart()"><img src="./imagens/98icons/w98_battery_alt.ico" width="35" height="35">Workout</li>
+            <li onclick="hideQuadro('pomodoro'), hideAppMenu(), clickStart()"><img src="./imagens/tomatoo.png" width="35" height="35">  Pomodoro</li>
+            <li onclick="hideQuadro('todoContainer'), hideAppMenu(), clickStart()"><img src="./imagens/98icons/w98_message_tack.ico" width="35" height="35">To Do list</li>
+            <li onclick="hideQuadro('skillsContainer'), hideAppMenu(), clickStart()"><img src="./imagens/98icons/w98_joystick.ico" width="35" height="35">Gamify</li>
+            <li onclick="hideQuadro('calendarContainer'), hideAppMenu(), clickStart()"><img src="./imagens/w98_calendar.ico" width="35" height="35"> Calendar</li>
+            <li onclick="clearDisplay(), hideQuadro('calcContainer'), hideAppMenu(), clickStart()"><img src="./imagens/w98_calculator.ico" width="35" height="35"> Calculator</li>
+            <li onclick="hideQuadro('wallpContainer'), hideAppMenu(), clickStart()"><img src="./imagens/w98_directory_pictures.ico" width="35" height="35">Wallpaper</li>
+            <li onclick="hideQuadro('dailiesContainer'), hideAppMenu(), clickStart()"><img src="./imagens/98icons/w98_wia_img_check.ico" width="35" height="35">Dailies</li>
+            <li onclick="hideQuadro('contentContainer'), hideAppMenu(), clickStart()"><img src="./imagens/98icons/w98_camera3_vid.ico" width="35" height="35">Content</li>
+            <li onclick="hideQuadro('chatContainer'), hideAppMenu(), clickStart()"><img src="./imagens/98icons/w98_message_file.ico" width="35" height="35">Chat Assistant</li>
+            <li onclick="hideQuadro('financeContainer'), hideAppMenu(), clickStart()"><img src="./imagens/98icons/w98_calculator.ico" width="35" height="35">Finance Log</li>
+            <li onclick="hideQuadro('ideasContainer'), hideAppMenu(), clickStart()"><img src="./imagens/98icons/w98_notepad.ico" width="35" height="35">Ideas</li>
+            <li onclick="hideQuadro('notesContainer'), hideAppMenu(), clickStart()"><img src="./imagens/98icons/w98_note.ico" width="35" height="35">Notes</li>
+            <li onclick="hideQuadro('plannerContainer'), hideAppMenu(), clickStart()"><img src="./imagens/98icons/w98_notepad_file.ico" width="35" height="35">Planner</li>
+            <li onclick="hideQuadro('connectionsContainer'), hideAppMenu(), clickStart()"><img src="./imagens/98icons/w98_web_file.ico" width="35" height="35">Connections</li>
+            <li onclick="hideQuadro('llmUsageContainer'), hideAppMenu(), clickStart()"><img src="./imagens/98icons/w98_chip_ramdrive.ico" width="35" height="35">LLM Usage</li>
+            <li onclick="hideQuadro('nextFeatures'), hideAppMenu(), clickStart()"><img src="./imagens/98icons/w98_tools_gear.ico" width="35" height="35">Next Features</li>
+	
+	</ul>
     </div>
   </body>
 </html>

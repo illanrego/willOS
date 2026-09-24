@@ -1,0 +1,3 @@
+var LOCAL_PROXY_BASE_URL = "https://api-proxy.willstartpage.workers.dev"
+var SUPABASE_URL = "https://vjtlojclygnogsuroogl.supabase.co"
+var SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZqdGxvamNseWdub2dzdXJvb2dsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0OTA2MzAsImV4cCI6MjA5MzA2NjYzMH0.xdvZFRL_Z2uM9u0nAoXPvGYOZw9XBa5mfPqEdCBSySE"

@@ -1,10 +1,13 @@
 {
   "name": "willos",
   "private": true,
-  "description": "Read-only desktop that draws the will content ledger.",
+  "description": "willOS - a startpage variation for CLI-first input: the terminal decides, the desktop draws.",
   "scripts": {
     "test": "node --test tests/*.test.js",
     "dev": "python3 -m http.server 8123",
     "export": "python3 scripts/export_projection.py"
+  },
+  "devDependencies": {
+    "supabase": "^2.102.0"
   }
 }

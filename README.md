@@ -1,45 +1,43 @@
 # willOS
 
-The view-only desktop for my work and personal data. Retro-OS shell, draggable
-windows, one window per projection.
+A variation of my startpage, for CLI-first input: **the terminal decides, the desktop draws.**
+
+Fork of [`illanrego/startpage`](https://github.com/illanrego/startpage) - same retro-OS
+shell, windows, icons and start menu, moving to a different division of labour.
 
 Repo: https://github.com/illanrego/willOS
 
-## The split (why this repo exists)
+## The idea
 
-Two apps, one store, no overlap:
+I make things in the terminal now and look at them in the browser. The window is a
+projection; the CLI is where state changes. It is the natural progression of what
+the app was already doing: the workout window is the reference case - it used to
+be an editable plan grid in the page, and today the sessions come from the Strong
+app, get imported, and the window just draws them.
 
-- **`will` - the workbench (terminal).** Capture, decisions, state changes,
-  routine logs, imports. The CLI is the only writer.
-- **willOS - the viewer (browser).** Graphs, boards, history. It draws. It has
-  no input controls, no toggles, no add buttons, and no write path at all.
+Two surfaces, one store:
 
-This is the correction to the old startpage, which had input bolted onto a
-dashboard: a routine obligation ("morning operator") ended up logged in the same
-surface as content work, so "did I do my routine" and "did content advance"
-became the same question. Input lives where the decisions happen.
+- **The CLI is the only writer.** Capture, decisions, state changes, routine logs,
+  imports.
+- **The desktop only draws.** No add buttons, no toggles, no inline editing in a
+  migrated window.
 
-**Nothing in this repo writes.** `tests/shell-ui.test.js` enforces that: no
-input tags in the HTML, no `localStorage.setItem`, no Supabase client in the
-viewer. If a feature needs to store something, it belongs in the CLI.
+Anything that needs to store something belongs in the CLI. `AGENTS.md` has the
+rules; `tests/shell-ui.test.js` enforces the Content window's side of them.
 
 ## Status
 
-Increment 1: shell + the Content projection.
+Windows are migrated one at a time. "Migrated" means its inputs are gone and it
+only draws.
 
-- `index.html` / `willos.js` / `willos.css` - the retro-OS shell (desktop,
-  icon bar, draggable + resizable windows, start menu), ported from startpage
-  and stripped of every feature window and input control.
-- `projection-core.js` - pure render math (Monday-first month grid, lane
-  legend order, month summaries, in-flight count) with unit tests. No write
-  helper exists, by design.
-- Content window - a month board of per-lane posted dots, drawn from
-  `data/projection.json`.
-- `scripts/export_projection.py` - builds that render model from
-  `~/.local/share/contentflow/board.json`. Placeholder for `will content export`.
-
-Next: the `will` umbrella CLI (content/note/done/plan verbs), then auth +
-reading the store directly, then more windows (workout import, notes backlog).
+- **Content** - migrated. READ-ONLY month board of per-lane posted days, drawn from
+  `data/projection.json`, exported from the `contentflow` ledger. The old
+  localStorage + Supabase toggle board was removed.
+- **Workout** - the reference case: sessions are logged in Strong and imported; the
+  window draws the charts.
+- Everything else (Dailies, To-do, Planner, Notes, Ideas, Finance, Gamify, Rec List,
+  Pomodoro, Calendar, Calculator, Wallpaper, Chat, Connections, LLM Usage) still
+  works as it did in startpage: input lives in the page until it moves.
 
 ## Run it
 
@@ -49,10 +47,7 @@ npm test             # node --test
 npm run export       # rebuild data/projection.json from the contentflow board
 ```
 
-Opening `index.html` directly works too, except that `fetch()` of the
-projection file needs the dev server.
-
-## Data flow
+## Content data flow
 
 ```
 ~/.local/share/contentflow/board.json      (the ledger - contentflow owns it)
@@ -63,19 +58,20 @@ projection file needs the dev server.
          |
          |  fetch() - read only
          v
-   willOS Content window
+   Content window
 ```
 
-The rule for "this card went live on day X" lives on the CLI side, once. The
-browser never derives content state and never talks to the database.
+The rule for "this card went live on day X" lives on the CLI side, once
+(`published` for moc/teacher, `posted` for standup/comics, `delivered` for
+freela). The browser never derives content state and never talks to the database.
+Lane codes come from contentflow; this repo only styles them.
 
-## Lane semantics
+## Tech
 
-Lane codes come from contentflow: `standup`, `comics`, `moc`, `teacher`,
-`freela`. This repo only styles them. `freela` is client work: it belongs in the
-ledger (same pipeline, end to end) but it is not part of content strategy, so it
-never enters planning or cadence talk.
+Plain JS, no build step, no frameworks. Retro-OS styling in `willos.css` (forked
+from startpage's stylesheet), shell + window engine in `willos.js`, pure
+projection math in `projection-core.js`, tests via `node --test`.
 
-A card counts as posted on the day its event log first reaches a live state:
-`published` (moc/teacher), `posted` (standup/comics), `delivered` (freela).
-Cards closed later still count - the transition is in the history.
+## License
+
+MIT, as the original.
