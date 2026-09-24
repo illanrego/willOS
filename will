@@ -1,0 +1,18 @@
+#!/usr/bin/env python3
+"""will - the willOS CLI: the only writer in the system.
+
+The desktop (index.html) draws projections; every state change happens here.
+`will content` shells out to the contentflow CLI - that engine is not rewritten.
+
+Usage: see `will --help`, or shortcuts like `will note "buy cat food"`.
+"""
+
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from willcli.cli import main  # noqa: E402
+
+if __name__ == "__main__":
+    raise SystemExit(main())

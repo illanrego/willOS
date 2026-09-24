@@ -1,5 +1,11 @@
+data/*.json
+!data/.gitkeep
+__pycache__/
+*.pyc
 keys.js
 node_modules/
+.DS_Store
+*.log
 .codex
 .purge-key.sh
 dhammapada.sh

@@ -14,7 +14,7 @@ const contentProjectionState = {
   renderRaf: 0,
 };
 
-const CONTENT_PROJECTION_URL = "data/projection.json";
+const CONTENT_PROJECTION_URL = "data/content.json";
 
 function contentProjectionCore() {
   return typeof ProjectionCore === "object" && ProjectionCore ? ProjectionCore : null;

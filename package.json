@@ -4,8 +4,10 @@
   "description": "willOS - a startpage variation for CLI-first input: the terminal decides, the desktop draws.",
   "scripts": {
     "test": "node --test tests/*.test.js",
+    "test:py": "python3 -m unittest discover -s tests/will -t .",
+    "test:all": "npm test && npm run test:py",
     "dev": "python3 -m http.server 8123",
-    "export": "python3 scripts/export_projection.py"
+    "export": "./will export"
   },
   "devDependencies": {
     "supabase": "^2.102.0"

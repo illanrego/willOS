@@ -1,35 +1,30 @@
-#!/usr/bin/env python3
-"""contentflow board.json -> data/projection.json (the render model willOS draws).
+"""Render models: one exporter per migrated window.
 
-Increment 1 of willOS: the browser never derives content state, so the rule for
-"this card went live on day X" lives here, on the CLI side, exactly once.
-
-Live states are the end of each lane ladder in contentflow:
-  moc/teacher publish, standup/comics post, freela delivers to the client.
-
-Card TITLES are excluded by default: the render model is meant to be safe to
-publish. Pass --with-titles to include them.
-
-This script is a placeholder for `will content export`; when the umbrella CLI
-lands, this logic moves behind that command.
+Each exporter turns a store into data/<window>.json, which the read-only window
+in the desktop fetches. Adding a migrated window means adding an entry to
+EXPORTERS - nothing in the browser derives state.
 """
 
 from __future__ import annotations
 
-import argparse
 import json
 import os
 from datetime import datetime, timezone
 from pathlib import Path
 
+from . import notes, store
+
+# Content: the end of each lane ladder in contentflow.
 LIVE_STATES = ("published", "posted", "delivered")
 TERMINAL_STATES = ("done", "skipped")
 LANE_ORDER = ("standup", "comics", "moc", "teacher", "freela")
-DEFAULT_STORE = Path.home() / ".local" / "share" / "contentflow" / "board.json"
+CONTENTFLOW_DEFAULT_STORE = Path.home() / ".local" / "share" / "contentflow" / "board.json"
+
+EXPORTERS = ("content", "notes")
 
 
-def store_path() -> Path:
-    return Path(os.environ.get("CONTENTFLOW_STORE", DEFAULT_STORE)).expanduser()
+def contentflow_store() -> Path:
+    return Path(os.environ.get("CONTENTFLOW_STORE", CONTENTFLOW_DEFAULT_STORE)).expanduser()
 
 
 def load_cards(path: Path) -> list[dict]:
@@ -78,7 +73,7 @@ def live_day(card: dict) -> str:
     return ""
 
 
-def build(cards: list[dict], with_titles: bool) -> dict:
+def build_content_model(cards: list[dict], with_titles: bool = False) -> dict:
     days: dict[str, dict[str, int]] = {}
     lanes: list[str] = []
     in_flight = []
@@ -104,7 +99,7 @@ def build(cards: list[dict], with_titles: bool) -> dict:
     ordered += [lane for lane in lanes if lane not in LANE_ORDER]
 
     return {
-        "generated_at": datetime.now().astimezone().isoformat(timespec="seconds"),
+        "generated_at": store.now_iso(),
         "source": f"contentflow board.json ({len(cards)} cards)",
         "lanes": ordered,
         "days": {key: days[key] for key in sorted(days)},
@@ -112,36 +107,55 @@ def build(cards: list[dict], with_titles: bool) -> dict:
     }
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser(description="Export the contentflow board as the willOS render model.")
-    parser.add_argument("--store", default=str(store_path()), help="path to board.json")
-    parser.add_argument(
-        "--out",
-        default=str(Path(__file__).resolve().parent.parent / "data" / "projection.json"),
-        help="output file",
-    )
-    parser.add_argument("--with-titles", action="store_true", help="include card titles")
-    args = parser.parse_args()
-
-    path = Path(args.store).expanduser()
+def export_content(with_titles: bool = False) -> tuple[str, int]:
+    path = contentflow_store()
     if not path.exists():
-        parser.error(f"no board at {path}")
-
+        raise SystemExit(f"no contentflow board at {path} (set CONTENTFLOW_STORE)")
     cards = load_cards(path)
-    projection = build(cards, args.with_titles)
+    model = build_content_model(cards, with_titles=with_titles)
+    store.write_render_model("content", model)
+    return "content", len(model["cards"])
 
-    out = Path(args.out).expanduser()
-    out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(projection, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
-    posted_days = len(projection["days"])
-    print(
-        f"{len(cards)} cards -> {out} "
-        f"({posted_days} posted days, {len(projection['cards'])} in flight, "
-        f"lanes: {', '.join(projection['lanes'])})"
+def export_notes() -> tuple[str, int]:
+    payload = notes.load()
+    sections = []
+    for section in payload["sections"]:
+        sections.append(
+            {
+                "slug": section.get("slug", ""),
+                "title": section.get("title", ""),
+                "lines": [
+                    {"id": line.get("id"), "text": line.get("text", ""), "at": line.get("at", "")}
+                    for line in section.get("lines", [])
+                ],
+            }
+        )
+    total = sum(len(section["lines"]) for section in sections)
+    store.write_render_model(
+        "notes",
+        {
+            "generated_at": store.now_iso(),
+            "source": "will notes store",
+            "sections": sections,
+        },
     )
+    return "notes", total
+
+
+def run(domains: list[str] | None = None, quiet: bool = False) -> int:
+    wanted = list(domains or EXPORTERS)
+    unknown = [name for name in wanted if name not in EXPORTERS]
+    if unknown:
+        raise SystemExit(f"no exporter for: {', '.join(unknown)} (known: {', '.join(EXPORTERS)})")
+
+    for name in wanted:
+        if name == "content":
+            _, count = export_content()
+            unit = "cards"
+        else:
+            _, count = export_notes()
+            unit = "lines"
+        if not quiet:
+            print(f"exported {name} -> {store.data_dir() / (name + '.json')} ({count} {unit})")
     return 0
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())

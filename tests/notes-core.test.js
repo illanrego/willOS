@@ -75,33 +75,35 @@ test("A section title is trimmed, and blank is rejected", () => {
   assert.equal(NotesCore.normalizeNoteTitle(undefined), "");
 });
 
-test("Section titles are editable alongside the body, on a fixed slug", () => {
-  const app = fs.readFileSync(path.join(root, "willos.js"), "utf8");
-
-  assert.match(app, /note-section-title-input/);
-  assert.match(app, /normalizeNoteTitle/);
-  // The save writes both fields; the slug is never part of the update payload.
-  assert.match(app, /\.update\(\{ title: nextTitle, body: nextBody \}\)/);
-  assert.doesNotMatch(app, /\.update\(\{[^}]*slug/);
-});
-
-test("Notes window is wired into the shell, not a standalone page", () => {
+test("The Notes window is wired into the shell, not a standalone page", () => {
   const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
-  const app = fs.readFileSync(path.join(root, "willos.js"), "utf8");
+  const projection = fs.readFileSync(path.join(root, "notes-projection.js"), "utf8");
 
   assert.match(html, /notes-core\.js[^>]*defer/);
-  assert.ok(html.indexOf("notes-core.js") < html.indexOf("willos.js"));
+  assert.ok(html.indexOf("notes-core.js") < html.indexOf("notes-projection.js"));
+  assert.ok(html.indexOf("notes-projection.js") < html.indexOf("willos.js"));
   assert.match(html, /id="notesContainer"/);
   assert.match(html, /hideQuadro\('notesContainer'\)/);
 
-  for (const hook of [
-    "loadNotesBackendState",
-    "renderNotes",
-    "saveNoteSection",
-    "parseNoteBody",
-  ]) {
-    assert.ok(app.includes(hook), `willos.js is missing ${hook}`);
+  for (const hook of ["initNotesProjection", "loadNotesModel", "renderNotes", "buildNoteBlock"]) {
+    assert.ok(projection.includes(hook), `notes-projection.js is missing ${hook}`);
   }
+});
+
+test("The notes editor is gone: no editing path survives in the shell", () => {
+  const raw = fs.readFileSync(path.join(root, "willos.js"), "utf8");
+  // Comments name the retired bits, so only the code is scanned.
+  const app = raw
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .split("\n")
+    .filter((line) => !line.trim().startsWith("//"))
+    .join("\n");
+
+  assert.doesNotMatch(app, /loadNotesBackendState/, "the Supabase notes loader is retired");
+  assert.doesNotMatch(app, /saveNoteSection/, "the in-page notes writer is retired");
+  assert.doesNotMatch(app, /note-section-title-input/, "the editable title input is retired");
+  assert.doesNotMatch(app, /notes_sections/, "willos.js must not touch notes_sections anymore");
+  assert.doesNotMatch(app, /notesContainer: \{ key:/, "Notes must not be in the backend sync list");
 });
 
 test("Habitica is gone from the app source", () => {
