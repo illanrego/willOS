@@ -74,7 +74,10 @@ test("Workout window is stretchable like the other feature windows", () => {
   const app = fs.readFileSync(path.join(root, "workout-v2.js"), "utf8");
 
   assert.match(shell, /makeResizable\("workoutContainer", \{\s*minWidth: 560,\s*minHeight: 420,\s*onResize: scheduleWorkoutV2ChartRender,/);
-  assert.match(shell, /flexQuadros = \["chatContainer", "workoutContainer", "notesContainer", "contentContainer"\]/);
+  // Membership, not the whole literal: migrating a window adds ids to this list.
+  const flexList = /const flexQuadros = \[([^\]]*)\]/.exec(shell);
+  assert.ok(flexList, "hideQuadro has no flexQuadros list");
+  assert.ok(flexList[1].includes('"workoutContainer"'), "workout must open as a flex column");
   assert.match(app, /function scheduleWorkoutV2ChartRender\(\)/);
   assert.match(css, /#workoutContainer \{[^}]*overflow: hidden;/);
   // The scroll area is a flex child, so the panel can never be clipped mid-content.
