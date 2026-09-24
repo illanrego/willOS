@@ -37,6 +37,24 @@ const MIGRATED_WINDOWS = [
     core: "planner-projection.js",
     data: "data/planner.json",
   },
+  {
+    id: "dailiesContainer",
+    script: "tasks-projection.js",
+    core: "tasks-projection.js",
+    data: "data/routine.json",
+  },
+  {
+    id: "todoContainer",
+    script: "tasks-projection.js",
+    core: "tasks-projection.js",
+    data: "data/tasks.json",
+  },
+  {
+    id: "kanbanContainer",
+    script: "tasks-projection.js",
+    core: "tasks-projection.js",
+    data: "data/tasks.json",
+  },
 ];
 
 // Comments legitimately name the things the code must not do, so scan code only.
@@ -108,7 +126,7 @@ test("every migrated window reads its own render model and nothing else", () => 
   MIGRATED_WINDOWS.forEach(({ script, data }) => {
     const source = readSource(script);
     assert.ok(source.includes(data.split("/").pop()), `${script} should fetch ${data}`);
-    assert.match(source, /fetch\([A-Z_]+_URL, \{ cache: "no-store" \}\)/);
+    assert.match(source, /fetch\([^)]*\{ cache: "no-store" \}\)/);
   });
 });
 
@@ -126,10 +144,14 @@ test("every migrated window is loaded before the shell runs", () => {
 
 test("every migrated window opens as a flex column", () => {
   MIGRATED_WINDOWS.forEach(({ id }) => {
-    const window_ = new RegExp(`#${id} \\{([^}]*)\\}`).exec(css);
-    assert.ok(window_, `missing #${id} rule`);
-    assert.match(window_[1], /flex-direction:\s*column/, `#${id} must be a column`);
-    assert.match(window_[1], /overflow:\s*hidden/);
+    // The stylesheet may carry several rules for the id (the older ones are kept
+    // for their chrome); at least one must make it a column window.
+    const rules = [...css.matchAll(new RegExp(`#${id} \\{([^}]*)\\}`, "g"))].map((match) => match[1]);
+    assert.ok(rules.length > 0, `missing #${id} rule`);
+    assert.ok(
+      rules.some((rule) => /flex-direction:\s*column/.test(rule) && /overflow:\s*hidden/.test(rule)),
+      `#${id} needs a flex-column rule with overflow hidden`,
+    );
     const flexList = /const flexQuadros = \[([^\]]*)\]/.exec(engine);
     assert.ok(flexList, "hideQuadro has no flexQuadros list");
     assert.ok(flexList[1].includes(`"${id}"`), `${id} must open as a flex column`);

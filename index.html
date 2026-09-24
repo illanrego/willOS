@@ -15,6 +15,7 @@
     <script src="notes-core.js?v=20260924-willos-fork" defer></script>
     <script src="notes-projection.js?v=20260924-notes" defer></script>
     <script src="planner-projection.js?v=20260924-planner" defer></script>
+    <script src="tasks-projection.js?v=20260924-tasks" defer></script>
     <script src="projection-core.js?v=20260924-willos-fork" defer></script>
     <script src="content-projection.js?v=20260924-willos-fork" defer></script>
     <script src="willos.js?v=20260924-willos-fork" defer></script>
@@ -39,8 +40,8 @@
       <label>Gamify</label>
  </div>
  <div class="icon" id="todoIconDiv" onclick="hideQuadro('dailiesContainer')">
-    <img src="./imagens/98icons/w98_wia_img_check.ico"  width="60">
-    <label>Dailies</label>
+ <img src="./imagens/98icons/w98_wia_img_check.ico"  width="60">
+ <label>Routine</label>
  </div>
  <div class="icon" id="todoListIconDiv" onclick="hideQuadro('todoContainer')">
     <img src="./imagens/98icons/w98_message_tack.ico" width="60">
@@ -193,32 +194,15 @@
         </div>
 	</div>
 	  </div>
-	<!-- DAILIES -->
+	<!-- ROUTINE (the old Dailies) -->
 		<div class="quadros" id="dailiesContainer" style="display: none">
 		  <div class="titleBar">
-	          <h2>Dailies</h2>
+	          <h2>Routine</h2>
 	          <button onclick="hideQuadro('dailiesContainer')">x</button>
 	           </div>
       <div id="dailiesWindowBody">
-        <div id="dailiesStatusSection">
-          <p id="dailiesStatus">Ready.</p>
-          <div id="tasklistContainer">
-            <ul id="dailiesList"></ul>
-          </div>
-        </div>
-			  <div id="addDailyContainer">
-                <input type="text" id="dailyInput" placeholder="Add daily">
-                <select id="dailySkillSelect" aria-label="Daily skill mapping">
-                  <option value="">No skill</option>
-                  <option value="coding">Coding</option>
-                  <option value="fitness">Physique</option>
-                  <option value="content">Content</option>
-                  <option value="standup">Stand Up</option>
-                  <option value="meditation">Meditation</option>
-                  <option value="jobhunting">Job Hunting</option>
-                </select>
-	        		<button onclick="addDaily()">+</button>
-			  </div>
+        <p id="dailiesStatus" class="projection-status">Ready.</p>
+        <div id="routineList" class="routine-list"></div>
       </div>
 			</div>
 <!-- CONTENT BOARD -->
@@ -249,12 +233,8 @@
           <button onclick="hideQuadro('todoContainer')">x</button>
         </div>
         <div id="todoPanel">
-          <div id="todoToolbar">
-            <input type="text" id="taskInput" placeholder="Add task">
-            <button id="todoAddBtn" onclick="addTask()">+</button>
-          </div>
-          <p id="todoStatus">Ready.</p>
-          <ul id="taskList"></ul>
+          <p id="todoStatus" class="projection-status">Ready.</p>
+          <ul id="taskList" class="projection-list"></ul>
         </div>
       </div>
 <!-- PLANNER -->
@@ -606,35 +586,8 @@
     <h2>Kanban Board</h2>
     <button onclick="hideQuadro('kanbanContainer')">x</button>
   </div>
-  <div class="kanban-board">
-    <div class="kanban-column">
-      <h3>To Do</h3>
-      <div id="todoColumn" class="kanban-items">
-        <div class="add-task">
-          <input type="text" id="todoInput" placeholder="Add task...">
-          <button onclick="addKanbanTask('todo')">+</button>
-        </div>
-      </div>
-    </div>
-    <div class="kanban-column">
-      <h3>In Progress</h3>
-      <div id="inProgressColumn" class="kanban-items">
-        <div class="add-task">
-          <input type="text" id="inProgressInput" placeholder="Add task...">
-          <button onclick="addKanbanTask('inProgress')">+</button>
-        </div>
-      </div>
-    </div>
-    <div class="kanban-column">
-      <h3>Done</h3>
-      <div id="doneColumn" class="kanban-items">
-        <div class="add-task">
-          <input type="text" id="doneInput" placeholder="Add task...">
-          <button onclick="addKanbanTask('done')">+</button>
-        </div>
-      </div>
-    </div>
-  </div>
+  <p id="kanbanStatus" class="projection-status">Ready.</p>
+  <div id="kanbanBoard" class="kanban-board"></div>
 </div>
 <div class="quadros" id="financeContainer" style="display: none">
   <div class="titleBar">
@@ -800,7 +753,7 @@
             <li onclick="hideQuadro('calendarContainer'), hideAppMenu(), clickStart()"><img src="./imagens/w98_calendar.ico" width="35" height="35"> Calendar</li>
             <li onclick="clearDisplay(), hideQuadro('calcContainer'), hideAppMenu(), clickStart()"><img src="./imagens/w98_calculator.ico" width="35" height="35"> Calculator</li>
             <li onclick="hideQuadro('wallpContainer'), hideAppMenu(), clickStart()"><img src="./imagens/w98_directory_pictures.ico" width="35" height="35">Wallpaper</li>
-            <li onclick="hideQuadro('dailiesContainer'), hideAppMenu(), clickStart()"><img src="./imagens/98icons/w98_wia_img_check.ico" width="35" height="35">Dailies</li>
+            <li onclick="hideQuadro('dailiesContainer'), hideAppMenu(), clickStart()"><img src="./imagens/98icons/w98_wia_img_check.ico" width="35" height="35">Routine</li>
             <li onclick="hideQuadro('contentContainer'), hideAppMenu(), clickStart()"><img src="./imagens/98icons/w98_camera3_vid.ico" width="35" height="35">Content</li>
             <li onclick="hideQuadro('chatContainer'), hideAppMenu(), clickStart()"><img src="./imagens/98icons/w98_message_file.ico" width="35" height="35">Chat Assistant</li>
             <li onclick="hideQuadro('financeContainer'), hideAppMenu(), clickStart()"><img src="./imagens/98icons/w98_calculator.ico" width="35" height="35">Finance Log</li>
