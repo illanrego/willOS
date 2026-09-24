@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>willOS</title>
+    <link rel="stylesheet" href="willos.css?v=20260924-boot" />
+    <link rel="icon" href="./imagens/debianlogo.png?v=20260924-boot">
+    <script src="projection-core.js?v=20260924-boot" defer></script>
+    <script src="willos.js?v=20260924-boot" defer></script>
+  </head>
+  <body>
+    <div id="bgContainer">
+      <header>
+        <div id="greetings">
+          <h1>willOS</h1>
+          <h3></h3>
+        </div>
+      </header>
+
+      <!-- DESKTOP ICONS -->
+      <div class="icon-bar">
+        <div class="icon" id="contentIconDiv" onclick="hideQuadro('contentContainer')">
+          <img src="./imagens/98icons/w98_camera3_vid.ico" width="60">
+          <label>Content</label>
+        </div>
+      </div>
+
+      <!-- WINDOWS -->
+      <section>
+        <div class="quadros" id="contentContainer" style="display: none">
+          <div class="titleBar">
+            <h2>Content</h2>
+            <button onclick="hideQuadro('contentContainer')">x</button>
+          </div>
+          <div id="contentWindowBody">
+            <div class="content-toolbar">
+              <span class="gamify-calendar-label">Posted lanes</span>
+              <div id="contentLaneLegend" class="content-lane-legend"></div>
+            </div>
+            <div class="month-nav content-month-nav" id="contentMonthNav"></div>
+            <div class="gamify-streak-weekdays" aria-hidden="true">
+              <span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span><span>Su</span>
+            </div>
+            <div class="content-board-wrap">
+              <div id="contentBoardGrid" class="content-board-grid"></div>
+            </div>
+            <p id="contentStatus" class="content-status">Booting.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- TASKBAR -->
+      <div id="linkContainer">
+        <button id="startBtn" onclick="hideAppMenu(), clickStart()">
+          <img src="./imagens/debianlogo.png" width="20" height="25" alt="debian logo">
+          Iniciar
+        </button>
+        <div class="barDivider"></div>
+        <div class="barDividerFat"></div>
+      </div>
+
+      <!-- START BUTTON MENU -->
+      <div id="appMenu" class="quadros">
+        <ul>
+          <li onclick="hideQuadro('contentContainer'), hideAppMenu(), clickStart()"><img src="./imagens/98icons/w98_camera3_vid.ico" width="35" height="35">Content</li>
+        </ul>
+      </div>
+    </div>
+  </body>
+</html>

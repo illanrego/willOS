@@ -1,0 +1,10 @@
+{
+  "name": "willos",
+  "private": true,
+  "description": "Read-only desktop that draws the will content ledger.",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "dev": "python3 -m http.server 8123",
+    "export": "python3 scripts/export_projection.py"
+  }
+}
