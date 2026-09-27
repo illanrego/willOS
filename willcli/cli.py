@@ -11,8 +11,16 @@ import os
 import sys
 from pathlib import Path
 
+try:
+    from rich.console import Console
+    from rich.panel import Panel
+    from rich.table import Table
+except ImportError:  # stdlib-only fallback for tests/minimal installs
+    Console = Panel = Table = None
+
 from . import (
     content,
+    activities,
     exporter,
     finance,
     importer,
@@ -65,6 +73,7 @@ USAGE_EXAMPLES = {
         "will skill coding                               +1, shorthand",
         "will skill list                                 today, total, streak, month",
         'will skill add cooking "Cooking"                a new skill',
+        "will skill rm meditation                        delete an activity (asks first)",
     ],
     "task": [
         'will task add "swap the tui widgets" --state doing',
@@ -110,20 +119,99 @@ USAGE_EXAMPLES = {
 }
 
 
+def _root_subparsers(parser: argparse.ArgumentParser):
+    return next(
+        (action for action in parser._actions if hasattr(action, "choices") and action.choices),
+        None,
+    )
+
+
+def _plain_root_help(parser: argparse.ArgumentParser, file) -> None:
+    out = file or sys.stdout
+    print("Usage: will [COMMAND] [OPTIONS]", file=out)
+    print("\nwillOS - the terminal writes, the desktop draws.", file=out)
+    print("\nACTIVITY LOG", file=out)
+    print("  One occurrence ledger powers both Routine and Gamify views.", file=out)
+    print("  `will done` and `will skill` update the same activity by name.", file=out)
+    print("  Dates accept YYYY-MM-DD or MM-DD (current year).\n", file=out)
+    print("COMMANDS", file=out)
+    sub = _root_subparsers(parser)
+    for name, command in sub.choices.items():
+        print(f"  {name:<10} {command.description or command.help or ''}", file=out)
+    print("\nQUICK START", file=out)
+    print("  will skill <name> [+N] [--day MM-DD]  log an activity", file=out)
+    print("  will done <name> --day MM-DD         mark the same activity as an obligation", file=out)
+    print("  will content platform 28 youtube posted --day MM-DD", file=out)
+    print("\ncommon uses:", file=out)
+    for line in USAGE_EXAMPLES["will"]:
+        print(f"  {line}", file=out)
+    print("\nMore help: will COMMAND --help", file=out)
+
+
+def _rich_root_help(parser: argparse.ArgumentParser, file) -> None:
+    console = Console(file=file or sys.stdout, force_terminal=False, color_system=None, width=100)
+    console.print(Panel.fit(
+        "[bold cyan]willOS[/bold cyan]  [dim]the terminal writes, the desktop draws[/dim]",
+        title="will", border_style="cyan",
+    ))
+    console.print("[bold]ACTIVITY LOG[/bold]")
+    console.print("  One occurrence ledger powers both Routine and Gamify views.")
+    console.print("  `will done` and `will skill` update the same activity by name.")
+    console.print("  Dates accept YYYY-MM-DD or MM-DD (current year).\n")
+
+    table = Table(title="COMMANDS", title_style="bold cyan", show_header=True, header_style="bold")
+    table.add_column("Command", style="cyan", no_wrap=True)
+    table.add_column("Purpose")
+    sub = _root_subparsers(parser)
+    for name, command in sub.choices.items():
+        table.add_row(name, command.description or command.help or "")
+    console.print(table)
+
+    console.print(Panel(
+        "[cyan]will skill <name> [+N] [--day MM-DD][/cyan]  log an activity\n"
+        "[cyan]will done <name> --day MM-DD[/cyan]         mark the same activity as an obligation\n"
+        "[cyan]will content platform 28 youtube posted --day MM-DD[/cyan]",
+        title="QUICK START", border_style="green",
+    ))
+    console.print("[bold]common uses:[/bold]")
+    for line in USAGE_EXAMPLES["will"]:
+        console.print(f"  {line}")
+    console.print("\n[dim]More help: will COMMAND --help[/dim]")
+
+
+class WillArgumentParser(argparse.ArgumentParser):
+    def print_help(self, file=None):
+        if self.prog == "will":
+            if Console is not None:
+                _rich_root_help(self, file)
+            else:
+                _plain_root_help(self, file)
+            return
+        super().print_help(file)
+
+
 def with_examples(parser: argparse.ArgumentParser, key: str, description: str = "") -> argparse.ArgumentParser:
     """Every command carries the handful of uses worth remembering."""
     parser.description = description or parser.description
-    parser.epilog = "common uses:\n" + "\n".join(f"  {line}" for line in USAGE_EXAMPLES[key])
+    prefix = "QUICK START\n  will skill <name> [+N] [--day MM-DD]  log an activity\n  will done <name> --day MM-DD         mark the same activity as an obligation\n  will content platform 28 youtube posted --day MM-DD\n\n"
+    parser.epilog = prefix + "common uses:\n" + "\n".join(f"  {line}" for line in USAGE_EXAMPLES[key]) if key == "will" else "common uses:\n" + "\n".join(f"  {line}" for line in USAGE_EXAMPLES[key])
     parser.formatter_class = argparse.RawDescriptionHelpFormatter
     return parser
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
+    parser = WillArgumentParser(
         prog="will",
-        description="willOS CLI: the terminal writes, the desktop draws.",
+        description=(
+            "willOS — the terminal writes, the desktop draws.\n\n"
+            "ACTIVITY LOG\n"
+            "  One occurrence ledger powers both Routine and Gamify views.\n"
+            "  `will done` and `will skill` update the same activity by name.\n"
+            "  Dates accept YYYY-MM-DD or MM-DD (current year)."
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    sub = parser.add_subparsers(dest="command")
+    sub = parser.add_subparsers(dest="command", title="commands", metavar="COMMAND")
 
     note = sub.add_parser("note", help="the notebook: capture, list, remove, promote",
                    formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -136,31 +224,33 @@ def build_parser() -> argparse.ArgumentParser:
     note.add_argument("--title", default="", help="override the promoted card title")
     note.add_argument("--replace", action="store_true", help="import: replace the store instead of appending")
 
-    routine_cmd = sub.add_parser("routine", help="routines (the old Dailies): list, add, rm",
+    routine_cmd = sub.add_parser("routine", help="Routine view: activities marked as obligations",
                    formatter_class=argparse.RawDescriptionHelpFormatter)
-    with_examples(routine_cmd, "routine", "routines (the old Dailies): list, add, rm")
+    with_examples(routine_cmd, "routine", "Routine view: activities marked as obligations")
     routine_cmd.add_argument("action", nargs="?", default="list", help="list (default) | add | rm")
     routine_cmd.add_argument("args", nargs="*", help="label to add, or routine code to remove")
+    routine_cmd.add_argument("--yes", "-y", action="store_true", help="rm: skip the confirmation prompt")
 
-    done = sub.add_parser("done", help="tick a routine for today",
+    done = sub.add_parser("done", help="record one activity occurrence for an obligation",
                    formatter_class=argparse.RawDescriptionHelpFormatter)
-    with_examples(done, "done", "tick a routine for today")
+    with_examples(done, "done", "record one activity occurrence for an obligation")
     done.add_argument("code", help="routine code, e.g. morning-operator")
-    done.add_argument("--day", default="", help="override the day (YYYY-MM-DD)")
+    done.add_argument("--day", type=store.parse_day, default="", help="override the day (YYYY-MM-DD, or MM-DD for the current year)")
 
     undo = sub.add_parser("undo", help="untick a routine for today",
                    formatter_class=argparse.RawDescriptionHelpFormatter)
     with_examples(undo, "undo", "untick a routine for today")
     undo.add_argument("code")
-    undo.add_argument("--day", default="")
+    undo.add_argument("--day", type=store.parse_day, default="")
 
-    skill = sub.add_parser("skill", help="skills (the old Gamify): list, add, or bump",
+    skill = sub.add_parser("skill", help="Gamify view: count activity occurrences",
                    formatter_class=argparse.RawDescriptionHelpFormatter)
-    with_examples(skill, "skill", "skills (the old Gamify): list, add, or bump")
-    skill.add_argument("action", nargs="?", default="list", help="list (default) | add | <code>")
+    with_examples(skill, "skill", "Gamify view: count activity occurrences")
+    skill.add_argument("action", nargs="?", default="list", help="list (default) | add | rm | <code>")
     skill.add_argument("args", nargs="*", help="[amount] for a bump, or code + label for add")
     skill.add_argument("--amount", type=int, default=1, help="how much to bump (default 1)")
-    skill.add_argument("--day", default="")
+    skill.add_argument("--day", type=store.parse_day, default="")
+    skill.add_argument("--yes", "-y", action="store_true", help="rm: skip the confirmation prompt")
 
     task = sub.add_parser("task", help="tasks: the To-do list and the Kanban board",
                    formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -211,7 +301,7 @@ def build_parser() -> argparse.ArgumentParser:
     with_examples(where, "where", "print the store and data directories")
     where.add_argument("args", nargs="*")
 
-    with_examples(parser, "will", "willOS CLI: the terminal writes, the desktop draws.")
+    with_examples(parser, "will")
     return parser
 
 
@@ -219,6 +309,25 @@ def auto_export(domains: list[str]) -> None:
     if os.environ.get("WILL_NO_AUTO_EXPORT"):
         return
     exporter.run(domains, quiet=True)
+
+
+def _describe_activity(entry: dict) -> str:
+    """What a delete would actually throw away, in one line."""
+    days = entry.get("days", {})
+    return (
+        f"'{entry['label']}' ({entry['code']}): "
+        f"{activities.total(entry)} occurrences on {len(days)} days, "
+        f"last {max(days, default='never')}"
+    )
+
+
+def _confirmed(args, what: str) -> bool:
+    """Destructive commands ask first. Non-interactive input must pass --yes."""
+    if getattr(args, "yes", False):
+        return True
+    if not sys.stdin.isatty():
+        raise SystemExit(f"about to delete {what}\nrefusing to delete without --yes (no terminal to confirm on)")
+    return input(f"delete {what}? [y/N] ").strip().lower() in ("y", "yes")
 
 
 def cmd_note(args) -> int:
@@ -306,59 +415,65 @@ def cmd_note(args) -> int:
 
 
 def cmd_routine(args) -> int:
-    payload = routine.load()
+    payload = activities.load()
     action = args.action or "list"
 
     if action == "add":
         label = " ".join(args.args).strip()
         if not label:
             raise SystemExit('usage: will routine add "Morning operator"')
-        entry = routine.ensure(payload, label, label)
-        store.save("routine", payload)
-        auto_export(["routine"])
+        entry = activities.ensure(payload, label, label, obligation=True)
+        store.save("activities", payload)
+        auto_export(["routine", "skills"])
         print(f"routine '{entry['code']}' ready ({entry['label']})")
         return 0
 
     if action == "rm":
         if not args.args:
             raise SystemExit("usage: will routine rm <code>")
-        entry = routine.remove(payload, args.args[0])
-        store.save("routine", payload)
-        auto_export(["routine"])
-        print(f"removed routine '{entry['code']}'")
+        entry = activities.find(payload, args.args[0])
+        if entry is None:
+            raise SystemExit(f"no activity '{args.args[0]}'. See: will routine")
+        if not _confirmed(args, _describe_activity(entry)):
+            print("aborted; nothing deleted")
+            return 1
+        entry = activities.remove(payload, args.args[0])
+        store.save("activities", payload)
+        auto_export(["routine", "skills"])
+        print(f"deleted routine '{entry['code']}' ({entry['label']})")
         return 0
 
-    rows = routine.summary(payload)
+    rows = activities.routine_summary(payload)
     if not rows:
         print("no routines yet")
         return 0
     for row in rows:
         mark = "x" if row["done_today"] else " "
-        print(f"[{mark}] {row['label']:<20} streak {row['streak']:>3}  this month {row['month_count']:>2}")
+        print(f"[{mark}] {row['label']:<20} streak {row['streak']:>3}  this month {row['month_total']:>2}")
     return 0
 
 
 def cmd_done(args) -> int:
-    payload = routine.load()
-    entry = routine.mark(payload, args.code, args.day, done=True)
-    store.save("routine", payload)
-    auto_export(["routine"])
+    payload = activities.load()
+    entry, _ = activities.record(payload, args.code, amount=1, day=args.day, source="routine")
+    store.save("activities", payload)
+    auto_export(["routine", "skills"])
     day = args.day or store.today_key()
-    print(f"done: {entry['label']} ({day}) - streak {routine.streak(entry, day)}")
+    print(f"done: {entry['label']} ({day}) - streak {activities.streak(entry, day)}")
     return 0
 
 
 def cmd_undo(args) -> int:
-    payload = routine.load()
-    entry = routine.mark(payload, args.code, args.day, done=False)
-    store.save("routine", payload)
-    auto_export(["routine"])
+    payload = activities.load()
+    entry = activities.clear(payload, args.code, args.day)
+    store.save("activities", payload)
+    auto_export(["routine", "skills"])
     print(f"cleared: {entry['label']} ({args.day or store.today_key()})")
     return 0
 
 
 def cmd_skill(args) -> int:
-    payload = skills.load()
+    payload = activities.load()
     action = args.action or "list"
 
     if action == "add":
@@ -366,10 +481,25 @@ def cmd_skill(args) -> int:
             raise SystemExit('usage: will skill add coding "Coding"')
         code = args.args[0]
         label = " ".join(args.args[1:]) or code
-        entry = skills.ensure(payload, code, label)
-        store.save("skills", payload)
-        auto_export(["skills"])
+        entry = activities.ensure(payload, code, label)
+        store.save("activities", payload)
+        auto_export(["routine", "skills"])
         print(f"skill '{entry['code']}' ready ({entry['label']})")
+        return 0
+
+    if action == "rm":
+        if not args.args:
+            raise SystemExit("usage: will skill rm <code>")
+        entry = activities.find(payload, args.args[0])
+        if entry is None:
+            raise SystemExit(f"no activity '{args.args[0]}'. See: will skill list")
+        if not _confirmed(args, _describe_activity(entry)):
+            print("aborted; nothing deleted")
+            return 1
+        entry = activities.remove(payload, args.args[0])
+        store.save("activities", payload)
+        auto_export(["routine", "skills"])
+        print(f"deleted '{entry['code']}' ({entry['label']})")
         return 0
 
     if action not in ("list", "add"):
@@ -379,17 +509,17 @@ def cmd_skill(args) -> int:
                 amount = int(str(args.args[0]).lstrip("+"))
             except ValueError:
                 raise SystemExit(f"not an amount: {args.args[0]}")
-        entry, today = skills.bump(payload, action, amount, args.day)
-        store.save("skills", payload)
-        auto_export(["skills"])
+        entry, today = activities.adjust(payload, action, amount, args.day, source="skill")
+        store.save("activities", payload)
+        auto_export(["routine", "skills"])
         day = args.day or store.today_key()
         print(
-            f"{entry['label']}: {today} today, {skills.total(entry)} total, "
-            f"streak {skills.streak(entry, day)}"
+            f"{entry['label']}: {today} today, {activities.total(entry)} total, "
+            f"streak {activities.streak(entry, day)}"
         )
         return 0
 
-    rows = skills.summary(payload)
+    rows = activities.skill_summary(payload)
     if not rows:
         print("no skills yet")
         return 0

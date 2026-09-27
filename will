@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/home/illan/Documents/coding/willOS/.venv/bin/python
 """will - the willOS CLI: the only writer in the system.
 
 The desktop (index.html) draws projections; every state change happens here.

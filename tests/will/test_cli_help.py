@@ -37,6 +37,13 @@ class HelpExamplesTest(unittest.TestCase):
         self.assertIn('will plan add "finish willOS" --start 2026-09-24', output)
         self.assertIn("will plan rm 1", output)
 
+    def test_top_level_help_has_readable_sections_and_activity_language(self):
+        output = self.help_for()
+        self.assertIn("QUICK START", output)
+        self.assertIn("ACTIVITY LOG", output)
+        self.assertIn("will skill <name>", output)
+        self.assertNotIn("{note,routine,done,undo,skill", output)
+
     def test_the_top_level_help_lists_every_command(self):
         output = self.help_for()
         for command in cli.COMMANDS:

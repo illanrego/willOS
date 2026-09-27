@@ -40,6 +40,19 @@ def today_key() -> str:
     return datetime.now().astimezone().date().isoformat()
 
 
+def parse_day(value: str) -> str:
+    """--day accepts YYYY-MM-DD, or MM-DD meaning the current year. Blank stays blank."""
+    text = str(value or "").strip()
+    if not text:
+        return ""
+    if re.fullmatch(r"\d{2}-\d{2}", text):
+        text = f"{datetime.now().year}-{text}"
+    try:
+        return datetime.strptime(text, "%Y-%m-%d").date().isoformat()
+    except ValueError as exc:
+        raise ValueError(f"invalid --day {value!r}; use YYYY-MM-DD or MM-DD") from exc
+
+
 def slugify(value: str) -> str:
     slug = re.sub(r"[^a-z0-9]+", "-", str(value or "").strip().lower())
     return slug.strip("-")

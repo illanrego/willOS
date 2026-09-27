@@ -144,19 +144,20 @@ def export_notes() -> tuple[str, int]:
 
 
 def export_routine() -> tuple[str, int]:
-    from . import routine
+    from . import activities
 
-    payload = routine.load()
-    rows = routine.summary(payload)
+    payload = activities.load()
+    rows = activities.routine_summary(payload)
     days: dict[str, dict[str, int]] = {}
     for row in rows:
-        for day in row["days"]:
-            days.setdefault(day, {})[row["code"]] = 1
+        for day, value in row["days"].items():
+            if int(value) > 0:
+                days.setdefault(day, {})[row["code"]] = 1
     store.write_render_model(
         "routine",
         {
             "generated_at": store.now_iso(),
-            "source": "will routine store",
+            "source": "will activities store",
             "routines": [
                 {
                     "code": row["code"],
@@ -175,10 +176,10 @@ def export_routine() -> tuple[str, int]:
 
 
 def export_skills() -> tuple[str, int]:
-    from . import skills
+    from . import activities
 
-    payload = skills.load()
-    rows = skills.summary(payload)
+    payload = activities.load()
+    rows = activities.skill_summary(payload)
     days: dict[str, dict[str, int]] = {}
     for row in rows:
         for day, value in row["days"].items():
@@ -187,7 +188,7 @@ def export_skills() -> tuple[str, int]:
         "skills",
         {
             "generated_at": store.now_iso(),
-            "source": "will skills store",
+            "source": "will activities store",
             "skills": [
                 {
                     "code": row["code"],

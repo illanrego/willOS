@@ -20,6 +20,77 @@ class DomainTestCase(unittest.TestCase):
             os.environ.pop(key, None)
 
 
+class DayArgumentTest(DomainTestCase):
+    """--day takes a full date or a bare MM-DD, which means the current year."""
+
+    def test_a_bare_month_and_day_uses_the_current_year(self):
+        year = store.datetime.now().year
+        self.assertEqual(store.parse_day("09-24"), f"{year}-09-24")
+
+    def test_a_full_date_is_kept_and_a_blank_means_no_override(self):
+        self.assertEqual(store.parse_day("2025-09-19"), "2025-09-19")
+        self.assertEqual(store.parse_day(""), "")
+
+    def test_a_bad_day_raises_instead_of_landing_in_the_store(self):
+        with self.assertRaises(ValueError):
+            store.parse_day("24/09/2026")
+        with self.assertRaises(ValueError):
+            store.parse_day("13-45")
+
+
+
+
+class ActivityTest(DomainTestCase):
+    def test_routine_and_skill_views_share_one_daily_count(self):
+        from willcli import activities
+        payload = activities.load()
+        activities.ensure(payload, "physique", "Physique", obligation=True)
+        activities.record(payload, "physique", amount=1, day="2026-09-24", source="strong", metadata={"session_id": "s1", "training": "B"})
+        activities.record(payload, "physique", amount=1, day="2026-09-24", source="manual")
+
+        activity = activities.find(payload, "physique")
+        self.assertEqual(activity["days"]["2026-09-24"], 2)
+        self.assertEqual(activity["occurrences"]["2026-09-24"][0]["session_id"], "s1")
+        self.assertTrue(activities.routine_summary(payload)[0]["done_today"] is False)
+        physique = next(row for row in activities.skill_summary(payload) if row["code"] == "physique")
+        self.assertEqual(physique["total"], 2)
+
+    def test_adjust_can_remove_one_occurrence_without_going_below_zero(self):
+        from willcli import activities
+        payload = activities.load()
+        activities.record(payload, "standup", amount=3, day="2026-09-24", source="manual")
+
+        entry, value = activities.adjust(payload, "standup", amount=-1, day="2026-09-24")
+        self.assertEqual(value, 2)
+        self.assertEqual(entry["days"]["2026-09-24"], 2)
+        self.assertEqual(len(entry["occurrences"]["2026-09-24"]), 2)
+
+        entry, value = activities.adjust(payload, "standup", amount=-5, day="2026-09-24")
+        self.assertEqual(value, 0)
+        self.assertNotIn("2026-09-24", entry["days"])
+
+    def test_binary_view_is_derived_not_a_second_counter(self):
+        from willcli import activities
+        payload = activities.load()
+        activities.ensure(payload, "meditation", "Meditation", obligation=True)
+        activities.record(payload, "meditation", amount=1, day="2026-09-24")
+        activities.record(payload, "meditation", amount=1, day="2026-09-24")
+
+        activity = activities.find(payload, "meditation")
+        self.assertEqual(activity["days"]["2026-09-24"], 2)
+        row = next(row for row in activities.routine_summary(payload, today="2026-09-24") if row["code"] == "meditation")
+        self.assertTrue(row["done_today"])
+
+    def test_legacy_skill_prefixes_and_physique_alias_merge(self):
+        from willcli import activities
+        payload = {"version": 1, "activities": []}
+        activities.merge_legacy_skill(payload, {"code": "skill-fitness", "label": "Physique", "days": {"2026-09-23": 1}})
+        activities.merge_legacy_routine(payload, {"code": "physique", "label": "Physique", "days": ["2026-09-24"]})
+        activity = activities.find(payload, "physique")
+        self.assertEqual(activity["days"], {"2026-09-23": 1, "2026-09-24": 1})
+        self.assertTrue(activity["obligation"])
+
+
 class RoutineTest(DomainTestCase):
     def test_the_store_starts_with_the_two_real_routines(self):
         codes = [row["code"] for row in routine.summary(routine.load())]
