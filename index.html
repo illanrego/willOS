@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>willOS</title>
-    <link rel="stylesheet" href="willos.css?v=20260924-willos-fork" />
+    <link rel="stylesheet" href="willos.css?v=20260925-gamify-circles" />
     <link rel="stylesheet" href="workout-v2.css?v=20260924-willos-fork" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Roboto:wght@400&display=swap">
     <link rel="stylesheet" href="win98.ttf">
@@ -16,7 +16,7 @@
     <script src="notes-projection.js?v=20260924-notes" defer></script>
     <script src="planner-projection.js?v=20260924-planner" defer></script>
     <script src="tasks-projection.js?v=20260924-tasks" defer></script>
-    <script src="skills-projection.js?v=20260924-skills" defer></script>
+    <script src="skills-projection.js?v=20260925-gamify-circles" defer></script>
     <script src="finance-projection.js?v=20260924-finance" defer></script>
     <script src="projection-core.js?v=20260924-willos-fork" defer></script>
     <script src="content-projection.js?v=20260924-willos-fork" defer></script>
@@ -102,7 +102,7 @@
           <div id="flexSkills">
             <div id="gamifyCalendarSection">
               <div class="gamify-calendar-toolbar">
-                <span class="gamify-calendar-label">Skill days</span>
+                <span class="gamify-calendar-label">Streak calendar</span>
               </div>
               <div class="month-nav gamify-month-nav" id="gamifyMonthNav"></div>
               <div class="gamify-streak-weekdays" aria-hidden="true">
@@ -110,6 +110,7 @@
               </div>
               <div class="gamify-streak-calendar-wrap" id="gamifyStreakWrap">
                 <div id="gamifyStreakGrid" class="gamify-streak-grid"></div>
+                <svg id="gamifyStreakSvg" class="gamify-streak-svg" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg>
               </div>
             </div>
             <div id="gamifySkillsColumn">
