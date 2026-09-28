@@ -199,7 +199,10 @@ def export_skills() -> tuple[str, int]:
 
     payload = activities.load()
     floors = minimums.load()
-    rows = activities.skill_summary(payload)
+    # A hidden activity is a retired counter, not a skill: it has no card and no
+    # calendar days, so it is left out of the model entirely (its history stays
+    # in the store; `will skill show <code>` brings it back).
+    rows = [row for row in activities.skill_summary(payload) if not row["hidden"]]
     days: dict[str, dict[str, int]] = {}
     for row in rows:
         for day, value in row["days"].items():

@@ -83,6 +83,7 @@ USAGE_EXAMPLES = {
         "will skill list                                 today, total, streak, month",
         'will skill add cooking "Cooking"                a new skill',
         "will skill rm meditation                        delete an activity (asks first)",
+        "will skill hide counter-weed                    take a retired counter off Gamify",
     ],
     "task": [
         'will task add "swap the tui widgets" --state doing',
@@ -265,7 +266,7 @@ def build_parser() -> argparse.ArgumentParser:
     skill = sub.add_parser("skill", help="Gamify view: count activity occurrences",
                    formatter_class=argparse.RawDescriptionHelpFormatter)
     with_examples(skill, "skill", "Gamify view: count activity occurrences")
-    skill.add_argument("action", nargs="?", default="list", help="list (default) | add | rm | <code>")
+    skill.add_argument("action", nargs="?", default="list", help="list (default) | add | rm | hide | show | <code>")
     skill.add_argument("args", nargs="*", help="[amount] for a bump, or code + label for add")
     skill.add_argument("--amount", type=int, default=1, help="how much to bump (default 1)")
     skill.add_argument("--day", type=store.parse_day, default="")
@@ -563,6 +564,16 @@ def cmd_skill(args) -> int:
         print(f"deleted '{entry['code']}' ({entry['label']})")
         return 0
 
+    if action in ("hide", "show"):
+        if not args.args:
+            raise SystemExit(f"usage: will skill {action} <code>")
+        entry = activities.set_hidden(payload, args.args[0], action == "hide")
+        store.save("activities", payload)
+        auto_export(["skills"])
+        state = "hidden from Gamify" if action == "hide" else "shown in Gamify"
+        print(f"'{entry['code']}' ({entry['label']}) {state}")
+        return 0
+
     if action not in ("list", "add"):
         amount = args.amount
         if args.args:
@@ -593,9 +604,10 @@ def cmd_skill(args) -> int:
         week = minimums.count_in_week(row["days"])
         floor = minimums.get(floors, row["code"])
         quota = f"{week}/{floor}" if floor else f"{week}"
+        mark = "   (hidden)" if row["hidden"] else ""
         print(
             f"{row['label']:<20} week {quota:>7}  today {row['today']:>3}  total {row['total']:>5}  "
-            f"streak {row['streak']:>3}  month {row['month_total']:>4}"
+            f"streak {row['streak']:>3}  month {row['month_total']:>4}{mark}"
         )
     return 0
 

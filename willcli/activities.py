@@ -178,6 +178,23 @@ def remove(payload: dict, code: str) -> dict:
     return entry
 
 
+def set_hidden(payload: dict, code: str, hidden: bool) -> dict:
+    """Take an activity out of the Gamify window without losing its history.
+
+    A retired counter (weed, remedy) is not a skill and must not be drawn as one,
+    but its occurrences are still a record of what happened - so hiding beats
+    deleting, and `will skill show <code>` puts it back.
+    """
+    entry = find(payload, code)
+    if entry is None:
+        raise SystemExit(f"no activity '{code}'. See: will skill list")
+    if hidden:
+        entry["hidden"] = True
+    else:
+        entry.pop("hidden", None)
+    return entry
+
+
 def total(entry: dict) -> int:
     return sum(max(0, int(value)) for value in entry.get("days", {}).values())
 
@@ -197,6 +214,7 @@ def _summary(entry: dict, today: str = "") -> dict:
     return {
         "code": entry["code"],
         "label": entry["label"],
+        "hidden": bool(entry.get("hidden")),
         "today": int(entry.get("days", {}).get(target, 0)),
         "done_today": int(entry.get("days", {}).get(target, 0)) > 0,
         "total": total(entry),

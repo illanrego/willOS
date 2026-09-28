@@ -269,6 +269,51 @@ class TaskPruneTest(DomainTestCase):
         self.assertEqual(tasks.load()["tasks"], [])
 
 
+class HiddenActivityTest(DomainTestCase):
+    """A retired counter leaves the Gamify window without losing its history."""
+
+    def seed_counter(self, code="counter-weed"):
+        from willcli import activities
+        payload = activities.load()
+        activities.record(payload, code, amount=3, day="2026-05-20")
+        store.save("activities", payload)
+
+    def test_hiding_drops_the_card_and_its_days_but_keeps_the_record(self):
+        import json
+
+        from willcli import activities, exporter
+
+        self.seed_counter()
+        payload = activities.load()
+        activities.set_hidden(payload, "counter-weed", True)
+        store.save("activities", payload)
+
+        exporter.export_skills()
+        model = json.loads((store.data_dir() / "skills.json").read_text())
+        self.assertNotIn("counter-weed", [row["code"] for row in model["skills"]])
+        self.assertNotIn("2026-05-20", model["days"])
+
+        kept = activities.find(activities.load(), "counter-weed")
+        assert kept is not None
+        self.assertEqual(kept["days"]["2026-05-20"], 3, "the occurrences stay on record")
+
+    def test_showing_it_again_puts_the_card_back(self):
+        from willcli import activities
+
+        self.seed_counter("counter-remedy")
+        payload = activities.load()
+        activities.set_hidden(payload, "counter-remedy", True)
+        activities.set_hidden(payload, "counter-remedy", False)
+        row = next(item for item in activities.skill_summary(payload) if item["code"] == "counter-remedy")
+        self.assertFalse(row["hidden"])
+
+    def test_hiding_an_unknown_activity_is_an_explicit_error(self):
+        from willcli import activities
+
+        with self.assertRaises(SystemExit):
+            activities.set_hidden(activities.load(), "nope", True)
+
+
 class PlannerTest(DomainTestCase):
     def test_a_plan_needs_a_title_and_an_ordered_range(self):
         with self.assertRaises(SystemExit):
