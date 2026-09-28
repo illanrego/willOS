@@ -49,7 +49,8 @@ test("the exporter stamps the floor onto both models", () => {
   assert.match(exporter, /"weekly_minimum": minimums\.get\(floors, row\["code"\]\)/);
   assert.match(exporter, /"week": minimums\.count_in_week\(row\["days"\]\)/);
   assert.match(exporter, /model\["weekly"\] = \{/);
-  assert.match(exporter, /minimums\.get\(floors, lane\)/);
+  // a lane is namespaced, so a lane floor cannot land on the same-named skill
+  assert.match(exporter, /minimums\.get\(floors, minimums\.lane_code\(lane\)\)/);
 });
 
 test("the floors live in the planning layer, not in contentflow", () => {
