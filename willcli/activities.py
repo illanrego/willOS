@@ -1,7 +1,9 @@
 """One occurrence ledger behind the Routine and Gamify views.
 
-An activity has one day->occurrence count map. Routine is the binary reading
-(count > 0) for activities marked as obligations; Gamify is the counted reading.
+An activity has one day->occurrence count map. Gamify is the counted reading.
+There is no per-day obligation flag any more: whether something has a floor is a
+weekly minimum kept in the planning layer (`willcli/minimums.py`), so a thing
+that merely happens and a thing he owes are told apart without a daily checkbox.
 Sources and subtypes can be attached by future importers without creating a
 second counter.
 """
@@ -24,13 +26,12 @@ ACTIVITY_ALIASES = {
 }
 
 DEFAULT_ACTIVITIES = (
-    ("morning-operator", "Morning operator", True),
-    ("jobhunting", "Job Hunting", True),
-    ("coding", "Coding", False),
-    ("physique", "Physique", False),
-    ("standup", "Stand Up", False),
-    ("meditation", "Meditation", False),
-    ("content", "Content", False),
+    ("jobhunting", "Job Hunting"),
+    ("coding", "Coding"),
+    ("physique", "Physique"),
+    ("standup", "Stand Up"),
+    ("meditation", "Meditation"),
+    ("content", "Content"),
 )
 
 
@@ -43,20 +44,18 @@ def blank() -> dict:
     return {
         "version": 1,
         "activities": [
-            {"code": code, "label": label, "obligation": obligation, "days": {}, "occurrences": {}, "created_at": store.now_iso()}
-            for code, label, obligation in DEFAULT_ACTIVITIES
+            {"code": code, "label": label, "days": {}, "occurrences": {}, "created_at": store.now_iso()}
+            for code, label in DEFAULT_ACTIVITIES
         ],
     }
 
 
-def _merge_entry(payload: dict, code: str, label: str, obligation: bool = False) -> dict:
+def _merge_entry(payload: dict, code: str, label: str) -> dict:
     wanted = canonical_code(code)
     entry = find(payload, wanted)
     if entry is None:
-        entry = {"code": wanted, "label": label or wanted, "obligation": bool(obligation), "days": {}, "created_at": store.now_iso()}
+        entry = {"code": wanted, "label": label or wanted, "days": {}, "created_at": store.now_iso()}
         payload.setdefault("activities", []).append(entry)
-    elif obligation:
-        entry["obligation"] = True
     if label and (not entry.get("label") or entry["label"] == wanted):
         entry["label"] = label
     entry.setdefault("days", {})
@@ -84,7 +83,7 @@ def migrate_legacy() -> dict:
     if routine_path.exists():
         legacy = store.load("routine", {"routines": []})
         for row in legacy.get("routines", []):
-            entry = _merge_entry(payload, row.get("code", ""), row.get("label", ""), obligation=True)
+            entry = _merge_entry(payload, row.get("code", ""), row.get("label", ""))
             for day in row.get("days", []):
                 entry["days"][day] = max(1, int(entry["days"].get(day, 0)))
                 _legacy_occurrences(entry, day, entry["days"][day], "legacy-routine")
@@ -114,8 +113,8 @@ def find(payload: dict, code: str):
     return next((item for item in payload.get("activities", []) if item.get("code") == wanted), None)
 
 
-def ensure(payload: dict, code: str, label: str = "", obligation: bool = False) -> dict:
-    return _merge_entry(payload, code, label or canonical_code(code), obligation)
+def ensure(payload: dict, code: str, label: str = "") -> dict:
+    return _merge_entry(payload, code, label or canonical_code(code))
 
 
 def record(payload: dict, code: str, amount: int = 1, day: str = "", source: str = "", metadata: dict | None = None) -> tuple[dict, int]:
@@ -198,7 +197,6 @@ def _summary(entry: dict, today: str = "") -> dict:
     return {
         "code": entry["code"],
         "label": entry["label"],
-        "obligation": bool(entry.get("obligation")),
         "today": int(entry.get("days", {}).get(target, 0)),
         "done_today": int(entry.get("days", {}).get(target, 0)) > 0,
         "total": total(entry),
@@ -214,10 +212,6 @@ def skill_summary(payload: dict, today: str = "") -> list[dict]:
     return [_summary(entry, today) for entry in payload.get("activities", [])]
 
 
-def routine_summary(payload: dict, today: str = "") -> list[dict]:
-    return [row for row in skill_summary(payload, today) if row["obligation"]]
-
-
 def merge_legacy_skill(payload: dict, row: dict) -> dict:
     entry = _merge_entry(payload, row.get("code", ""), row.get("label", ""))
     for day, value in (row.get("days") or {}).items():
@@ -226,7 +220,7 @@ def merge_legacy_skill(payload: dict, row: dict) -> dict:
 
 
 def merge_legacy_routine(payload: dict, row: dict) -> dict:
-    entry = _merge_entry(payload, row.get("code", ""), row.get("label", ""), obligation=True)
+    entry = _merge_entry(payload, row.get("code", ""), row.get("label", ""))
     for day in row.get("days", []):
         entry["days"][day] = max(1, int(entry["days"].get(day, 0)))
     return entry

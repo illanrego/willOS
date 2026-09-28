@@ -44,14 +44,14 @@ class ActivityTest(DomainTestCase):
     def test_routine_and_skill_views_share_one_daily_count(self):
         from willcli import activities
         payload = activities.load()
-        activities.ensure(payload, "physique", "Physique", obligation=True)
+        activities.ensure(payload, "physique", "Physique")
         activities.record(payload, "physique", amount=1, day="2026-09-24", source="strong", metadata={"session_id": "s1", "training": "B"})
         activities.record(payload, "physique", amount=1, day="2026-09-24", source="manual")
 
         activity = activities.find(payload, "physique")
         self.assertEqual(activity["days"]["2026-09-24"], 2)
         self.assertEqual(activity["occurrences"]["2026-09-24"][0]["session_id"], "s1")
-        self.assertTrue(activities.routine_summary(payload)[0]["done_today"] is False)
+        self.assertFalse(activities.skill_summary(payload)[0]["done_today"])
         physique = next(row for row in activities.skill_summary(payload) if row["code"] == "physique")
         self.assertEqual(physique["total"], 2)
 
@@ -72,13 +72,13 @@ class ActivityTest(DomainTestCase):
     def test_binary_view_is_derived_not_a_second_counter(self):
         from willcli import activities
         payload = activities.load()
-        activities.ensure(payload, "meditation", "Meditation", obligation=True)
+        activities.ensure(payload, "meditation", "Meditation")
         activities.record(payload, "meditation", amount=1, day="2026-09-24")
         activities.record(payload, "meditation", amount=1, day="2026-09-24")
 
         activity = activities.find(payload, "meditation")
         self.assertEqual(activity["days"]["2026-09-24"], 2)
-        row = next(row for row in activities.routine_summary(payload, today="2026-09-24") if row["code"] == "meditation")
+        row = next(row for row in activities.skill_summary(payload, today="2026-09-24") if row["code"] == "meditation")
         self.assertTrue(row["done_today"])
 
     def test_legacy_skill_prefixes_and_physique_alias_merge(self):
@@ -88,7 +88,6 @@ class ActivityTest(DomainTestCase):
         activities.merge_legacy_routine(payload, {"code": "physique", "label": "Physique", "days": ["2026-09-24"]})
         activity = activities.find(payload, "physique")
         self.assertEqual(activity["days"], {"2026-09-23": 1, "2026-09-24": 1})
-        self.assertTrue(activity["obligation"])
 
 
 class RoutineTest(DomainTestCase):

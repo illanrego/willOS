@@ -20,7 +20,7 @@ TERMINAL_STATES = ("done", "skipped")
 LANE_ORDER = ("standup", "comics", "moc", "teacher", "freela")
 CONTENTFLOW_DEFAULT_STORE = Path.home() / ".local" / "share" / "contentflow" / "board.json"
 
-EXPORTERS = ("content", "notes", "recs", "routine", "skills", "tasks", "planner", "finance")
+EXPORTERS = ("content", "notes", "recs", "skills", "tasks", "planner", "finance")
 
 
 def contentflow_store() -> Path:
@@ -108,11 +108,29 @@ def build_content_model(cards: list[dict], with_titles: bool = False) -> dict:
 
 
 def export_content(with_titles: bool = False) -> tuple[str, int]:
+    from . import minimums
+
     path = contentflow_store()
     if not path.exists():
         raise SystemExit(f"no contentflow board at {path} (set CONTENTFLOW_STORE)")
     cards = load_cards(path)
     model = build_content_model(cards, with_titles=with_titles)
+
+    # The weekly floor is a planning-layer number, so it is stamped on here
+    # rather than owned by the board: content still never learns about cadence.
+    floors = minimums.load()
+    start, end = minimums.week_days()
+    counts: dict[str, int] = {}
+    for day, lanes in model["days"].items():
+        if start <= day <= end:
+            for lane, count in lanes.items():
+                counts[lane] = counts.get(lane, 0) + int(count)
+    model["week"] = {"start": start, "end": end}
+    model["weekly"] = {
+        lane: {"count": counts.get(lane, 0), "minimum": minimums.get(floors, lane)}
+        for lane in model["lanes"]
+    }
+
     store.write_render_model("content", model)
     return "content", len(model["cards"])
 
@@ -159,52 +177,23 @@ def export_recs() -> tuple[str, int]:
     return "recs", len(items)
 
 
-def export_routine() -> tuple[str, int]:
-    from . import activities
-
-    payload = activities.load()
-    rows = activities.routine_summary(payload)
-    days: dict[str, dict[str, int]] = {}
-    for row in rows:
-        for day, value in row["days"].items():
-            if int(value) > 0:
-                days.setdefault(day, {})[row["code"]] = 1
-    store.write_render_model(
-        "routine",
-        {
-            "generated_at": store.now_iso(),
-            "source": "will activities store",
-            "routines": [
-                {
-                    "code": row["code"],
-                    "label": row["label"],
-                    "streak": row["streak"],
-                    "done_today": row["done_today"],
-                    "month_count": row["month_count"],
-                    "last_done_on": row["last_done_on"],
-                }
-                for row in rows
-            ],
-            "days": {key: days[key] for key in sorted(days)},
-        },
-    )
-    return "routine", len(rows)
-
-
 def export_skills() -> tuple[str, int]:
-    from . import activities
+    from . import activities, minimums
 
     payload = activities.load()
+    floors = minimums.load()
     rows = activities.skill_summary(payload)
     days: dict[str, dict[str, int]] = {}
     for row in rows:
         for day, value in row["days"].items():
             days.setdefault(day, {})[row["code"]] = int(value)
+    start, end = minimums.week_days()
     store.write_render_model(
         "skills",
         {
             "generated_at": store.now_iso(),
             "source": "will activities store",
+            "week": {"start": start, "end": end},
             "skills": [
                 {
                     "code": row["code"],
@@ -213,6 +202,9 @@ def export_skills() -> tuple[str, int]:
                     "today": row["today"],
                     "streak": row["streak"],
                     "month_total": row["month_total"],
+                    # the x/y the card draws: this week's occurrences over the floor
+                    "week": minimums.count_in_week(row["days"]),
+                    "weekly_minimum": minimums.get(floors, row["code"]),
                 }
                 for row in rows
             ],
@@ -320,7 +312,6 @@ DISPATCH = {
     "content": export_content,
     "notes": export_notes,
     "recs": export_recs,
-    "routine": export_routine,
     "skills": export_skills,
     "tasks": export_tasks,
     "planner": export_planner,
@@ -331,7 +322,6 @@ UNITS = {
     "content": "cards",
     "notes": "lines",
     "recs": "recs",
-    "routine": "routines",
     "skills": "skills",
     "tasks": "open tasks",
     "planner": "plans",

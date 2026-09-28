@@ -1,6 +1,6 @@
 """Argument parsing and command dispatch for `will`.
 
-Shortcuts that matter: `will done <routine>`, `will skill <code>`, `will note "text"`.
+Shortcuts that matter: `will skill <code>`, `will done <code>`, `will min <code> <n>`.
 """
 
 from __future__ import annotations
@@ -27,7 +27,6 @@ from . import (
     notes,
     planner,
     recs,
-    routine,
     skills,
     store,
     tasks,
@@ -40,7 +39,7 @@ REC_ACTIONS = ("add", "list", "rm", "import")
 USAGE_EXAMPLES = {
     "will": [
         'will note "buy cat food"                 capture a line',
-        "will done morning-operator               tick a routine",
+        "will done physique                       log an occurrence",
         "will skill coding +1                     count a skill day",
         'will task add "call the vet" --state doing',
         "will content board                       the contentflow engine",
@@ -62,20 +61,20 @@ USAGE_EXAMPLES = {
         'will rec import legacy.json                    old Supabase recommendations rows',
         "will rec import --from-notes                   move the parked 'Rec List' notes section",
     ],
-    "routine": [
-        "will routine                                    what I owe, with streaks",
-        'will routine add "Gym"',
-        "will routine rm gym",
-        "will done morning-operator                      the tick command lives in `will done`",
+    "min": [
+        "will min                                        this week's floors, and where they live",
+        "will min physique 4                             a floor for an activity",
+        "will min teacher 2                              ...or for a content lane",
+        "will min rm physique                            drop the floor (0 does the same)",
     ],
     "done": [
-        "will done morning-operator                      tick it for today",
-        "will done job-hunting --day 2026-09-20          backfill a day",
-        "will routine                                    see every routine and its streak",
+        "will done physique                              log one for today",
+        "will done standup --day 09-24                   backfill a day",
+        "will min                                        where the weekly floors live",
     ],
     "undo": [
-        "will undo morning-operator                      clear today's tick",
-        "will undo morning-operator --day 2026-09-20",
+        "will undo physique                              clear today's log",
+        "will undo physique --day 09-24",
     ],
     "skill": [
         "will skill coding +2                            count two on today",
@@ -141,7 +140,7 @@ def _plain_root_help(parser: argparse.ArgumentParser, file) -> None:
     print("Usage: will [COMMAND] [OPTIONS]", file=out)
     print("\nwillOS - the terminal writes, the desktop draws.", file=out)
     print("\nACTIVITY LOG", file=out)
-    print("  One occurrence ledger powers both Routine and Gamify views.", file=out)
+    print("  One occurrence ledger feeds the Gamify window; weekly floors live in `will min`.", file=out)
     print("  `will done` and `will skill` update the same activity by name.", file=out)
     print("  Dates accept YYYY-MM-DD or MM-DD (current year).\n", file=out)
     print("COMMANDS", file=out)
@@ -150,7 +149,7 @@ def _plain_root_help(parser: argparse.ArgumentParser, file) -> None:
         print(f"  {name:<10} {command.description or command.help or ''}", file=out)
     print("\nQUICK START", file=out)
     print("  will skill <name> [+N] [--day MM-DD]  log an activity", file=out)
-    print("  will done <name> --day MM-DD         mark the same activity as an obligation", file=out)
+    print("  will min <code> <n>                  set a weekly floor", file=out)
     print("  will content platform 28 youtube posted --day MM-DD", file=out)
     print("\ncommon uses:", file=out)
     for line in USAGE_EXAMPLES["will"]:
@@ -165,7 +164,7 @@ def _rich_root_help(parser: argparse.ArgumentParser, file) -> None:
         title="will", border_style="cyan",
     ))
     console.print("[bold]ACTIVITY LOG[/bold]")
-    console.print("  One occurrence ledger powers both Routine and Gamify views.")
+    console.print("  One occurrence ledger feeds the Gamify window; weekly floors live in `will min`.")
     console.print("  `will done` and `will skill` update the same activity by name.")
     console.print("  Dates accept YYYY-MM-DD or MM-DD (current year).\n")
 
@@ -203,7 +202,7 @@ class WillArgumentParser(argparse.ArgumentParser):
 def with_examples(parser: argparse.ArgumentParser, key: str, description: str = "") -> argparse.ArgumentParser:
     """Every command carries the handful of uses worth remembering."""
     parser.description = description or parser.description
-    prefix = "QUICK START\n  will skill <name> [+N] [--day MM-DD]  log an activity\n  will done <name> --day MM-DD         mark the same activity as an obligation\n  will content platform 28 youtube posted --day MM-DD\n\n"
+    prefix = "QUICK START\n  will skill <name> [+N] [--day MM-DD]  log an activity\n  will min <code> <n>                  set a weekly floor\n  will content platform 28 youtube posted --day MM-DD\n\n"
     parser.epilog = prefix + "common uses:\n" + "\n".join(f"  {line}" for line in USAGE_EXAMPLES[key]) if key == "will" else "common uses:\n" + "\n".join(f"  {line}" for line in USAGE_EXAMPLES[key])
     parser.formatter_class = argparse.RawDescriptionHelpFormatter
     return parser
@@ -215,7 +214,7 @@ def build_parser() -> argparse.ArgumentParser:
         description=(
             "willOS — the terminal writes, the desktop draws.\n\n"
             "ACTIVITY LOG\n"
-            "  One occurrence ledger powers both Routine and Gamify views.\n"
+            "  One occurrence ledger feeds the Gamify window; weekly floors live in `will min`.\n"
             "  `will done` and `will skill` update the same activity by name.\n"
             "  Dates accept YYYY-MM-DD or MM-DD (current year)."
         ),
@@ -244,22 +243,21 @@ def build_parser() -> argparse.ArgumentParser:
     rec.add_argument("--section", "-s", default="Rec List", help="import: notes section to absorb")
     rec.add_argument("--replace", action="store_true", help="import: replace the list instead of appending")
 
-    routine_cmd = sub.add_parser("routine", help="Routine view: activities marked as obligations",
+    min_cmd = sub.add_parser("min", help="weekly minimums: the floor an activity or lane owes each week",
                    formatter_class=argparse.RawDescriptionHelpFormatter)
-    with_examples(routine_cmd, "routine", "Routine view: activities marked as obligations")
-    routine_cmd.add_argument("action", nargs="?", default="list", help="list (default) | add | rm")
-    routine_cmd.add_argument("args", nargs="*", help="label to add, or routine code to remove")
-    routine_cmd.add_argument("--yes", "-y", action="store_true", help="rm: skip the confirmation prompt")
+    with_examples(min_cmd, "min", "weekly minimums: the floor an activity or lane owes each week")
+    min_cmd.add_argument("action", nargs="?", default="list", help="list (default) | rm")
+    min_cmd.add_argument("args", nargs="*", help="code, or code + a number per week")
 
-    done = sub.add_parser("done", help="record one activity occurrence for an obligation",
+    done = sub.add_parser("done", help="record one activity occurrence",
                    formatter_class=argparse.RawDescriptionHelpFormatter)
-    with_examples(done, "done", "record one activity occurrence for an obligation")
-    done.add_argument("code", help="routine code, e.g. morning-operator")
+    with_examples(done, "done", "record one activity occurrence")
+    done.add_argument("code", help="activity code, e.g. physique")
     done.add_argument("--day", type=store.parse_day, default="", help="override the day (YYYY-MM-DD, or MM-DD for the current year)")
 
-    undo = sub.add_parser("undo", help="untick a routine for today",
+    undo = sub.add_parser("undo", help="clear today's log for an activity",
                    formatter_class=argparse.RawDescriptionHelpFormatter)
-    with_examples(undo, "undo", "untick a routine for today")
+    with_examples(undo, "undo", "clear today's log for an activity")
     undo.add_argument("code")
     undo.add_argument("--day", type=store.parse_day, default="")
 
@@ -436,42 +434,48 @@ def cmd_note(args) -> int:
     raise SystemExit(f"unknown note action: {action}")
 
 
-def cmd_routine(args) -> int:
-    payload = activities.load()
+def cmd_min(args) -> int:
+    """Weekly minimums: the floor a lane or activity owes each week."""
+    from . import minimums
+
+    payload = minimums.load()
     action = args.action or "list"
 
-    if action == "add":
-        label = " ".join(args.args).strip()
-        if not label:
-            raise SystemExit('usage: will routine add "Morning operator"')
-        entry = activities.ensure(payload, label, label, obligation=True)
-        store.save("activities", payload)
-        auto_export(["routine", "skills"])
-        print(f"routine '{entry['code']}' ready ({entry['label']})")
-        return 0
+    if action not in ("list", "rm"):
+        # `will min physique 4` - the ergonomic path, same as `will note "..."`
+        args.args = [action, *args.args]
+        action = "list"
 
     if action == "rm":
         if not args.args:
-            raise SystemExit("usage: will routine rm <code>")
-        entry = activities.find(payload, args.args[0])
-        if entry is None:
-            raise SystemExit(f"no activity '{args.args[0]}'. See: will routine")
-        if not _confirmed(args, _describe_activity(entry)):
-            print("aborted; nothing deleted")
-            return 1
-        entry = activities.remove(payload, args.args[0])
-        store.save("activities", payload)
-        auto_export(["routine", "skills"])
-        print(f"deleted routine '{entry['code']}' ({entry['label']})")
+            raise SystemExit("usage: will min rm <code>")
+        code, _ = minimums.set_minimum(payload, args.args[0], 0)
+        store.save("minimums", payload)
+        auto_export(["skills", "content"])
+        print(f"cleared the weekly floor for '{code}'")
         return 0
 
-    rows = activities.routine_summary(payload)
-    if not rows:
-        print("no routines yet")
+    if args.args:
+        if len(args.args) < 2:
+            raise SystemExit("usage: will min <code> <n>   (0 clears the floor)")
+        try:
+            value = int(args.args[1])
+        except ValueError:
+            raise SystemExit(f"not a number: {args.args[1]}")
+        code, amount = minimums.set_minimum(payload, args.args[0], value)
+        store.save("minimums", payload)
+        auto_export(["skills", "content"])
+        print(f"'{code}' -> {amount} per week" if amount else f"cleared the weekly floor for '{code}'")
         return 0
+
+    rows = minimums.rows(payload)
+    start, end = minimums.week_days()
+    if not rows:
+        print("no weekly floors. Set one: will min physique 4")
+        return 0
+    print(f"week {start} .. {end}")
     for row in rows:
-        mark = "x" if row["done_today"] else " "
-        print(f"[{mark}] {row['label']:<20} streak {row['streak']:>3}  this month {row['month_total']:>2}")
+        print(f"  {row['code']:<16} {row['minimum']}/week")
     return 0
 
 
@@ -479,7 +483,7 @@ def cmd_done(args) -> int:
     payload = activities.load()
     entry, _ = activities.record(payload, args.code, amount=1, day=args.day, source="routine")
     store.save("activities", payload)
-    auto_export(["routine", "skills"])
+    auto_export(["skills"])
     day = args.day or store.today_key()
     print(f"done: {entry['label']} ({day}) - streak {activities.streak(entry, day)}")
     return 0
@@ -489,7 +493,7 @@ def cmd_undo(args) -> int:
     payload = activities.load()
     entry = activities.clear(payload, args.code, args.day)
     store.save("activities", payload)
-    auto_export(["routine", "skills"])
+    auto_export(["skills"])
     print(f"cleared: {entry['label']} ({args.day or store.today_key()})")
     return 0
 
@@ -505,7 +509,7 @@ def cmd_skill(args) -> int:
         label = " ".join(args.args[1:]) or code
         entry = activities.ensure(payload, code, label)
         store.save("activities", payload)
-        auto_export(["routine", "skills"])
+        auto_export(["skills"])
         print(f"skill '{entry['code']}' ready ({entry['label']})")
         return 0
 
@@ -520,7 +524,7 @@ def cmd_skill(args) -> int:
             return 1
         entry = activities.remove(payload, args.args[0])
         store.save("activities", payload)
-        auto_export(["routine", "skills"])
+        auto_export(["skills"])
         print(f"deleted '{entry['code']}' ({entry['label']})")
         return 0
 
@@ -533,7 +537,7 @@ def cmd_skill(args) -> int:
                 raise SystemExit(f"not an amount: {args.args[0]}")
         entry, today = activities.adjust(payload, action, amount, args.day, source="skill")
         store.save("activities", payload)
-        auto_export(["routine", "skills"])
+        auto_export(["skills"])
         day = args.day or store.today_key()
         print(
             f"{entry['label']}: {today} today, {activities.total(entry)} total, "
@@ -545,9 +549,17 @@ def cmd_skill(args) -> int:
     if not rows:
         print("no skills yet")
         return 0
+    from . import minimums
+
+    floors = minimums.load()
+    start, end = minimums.week_days()
+    print(f"week {start} .. {end}")
     for row in rows:
+        week = minimums.count_in_week(row["days"])
+        floor = minimums.get(floors, row["code"])
+        quota = f"{week}/{floor}" if floor else f"{week}"
         print(
-            f"{row['label']:<20} today {row['today']:>3}  total {row['total']:>5}  "
+            f"{row['label']:<20} week {quota:>7}  today {row['today']:>3}  total {row['total']:>5}  "
             f"streak {row['streak']:>3}  month {row['month_total']:>4}"
         )
     return 0
@@ -786,7 +798,7 @@ def cmd_where(args) -> int:
 COMMANDS = {
     "note": cmd_note,
     "rec": cmd_rec,
-    "routine": cmd_routine,
+    "min": cmd_min,
     "done": cmd_done,
     "undo": cmd_undo,
     "skill": cmd_skill,

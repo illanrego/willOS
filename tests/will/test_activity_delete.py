@@ -75,18 +75,15 @@ class DeleteActivityTest(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertNotIn("meditation", self.remaining())
 
-    def test_routine_rm_also_confirms(self):
+    def test_the_delete_is_shared_with_the_gamify_view(self):
         self.seed()
-        activities.ensure(activities.load(), "meditation", "Meditation", obligation=True)
-        code, _ = self.run_cli(["routine", "rm", "meditation", "--yes"])
+        code, _ = self.run_cli(["skill", "rm", "meditation", "--yes"])
         self.assertEqual(code, 0)
         self.assertNotIn("meditation", self.remaining())
 
     def test_removing_an_unknown_activity_is_an_explicit_error(self):
         with self.assertRaises(SystemExit):
             self.run_cli(["skill", "rm", "nope", "--yes"])
-        with self.assertRaises(SystemExit):
-            self.run_cli(["routine", "rm", "nope", "--yes"])
 
     def test_the_prompt_names_what_would_be_lost(self):
         self.seed()
