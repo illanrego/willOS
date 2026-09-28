@@ -1307,13 +1307,14 @@ window.startpageBackendDiagnostics = function () {
 // The terminal owns the ledger now (`will fin add 149,90 --kind expense
 // --category course`, `will fin list`) and finance-projection.js draws
 // data/finance.json: month totals, spent by category and the recent entries.
-// REC LIST / NEXT FEATURES / IDEAS used to live here.
+// NEXT FEATURES / IDEAS used to live here.
 // They were note-shaped, so they are notes now: the notebook holds them and
 // the Notes window draws them. In the terminal:
-//   will note "the bear" --section "Rec List"
 //   will note "bit about uber drivers" --section "Videos Ideas"
-// The old Supabase rows (recommendations, feature_backlog_items) import into
-// those sections with `will import legacy.json`.
+// The old Supabase rows (feature_backlog_items) import into that section with
+// `will import legacy.json`.
+// REC LIST used to live here too: it has its own store and view now
+// (`will rec add "the bear"`, recs-projection.js draws data/recs.json).
 
 // POMODORO
 
@@ -1475,6 +1476,10 @@ window.onload = function () {
   });
   makeResizable("notesContainer", {
     minWidth: 420,
+    minHeight: 320,
+  });
+  makeResizable("recContainer", {
+    minWidth: 360,
     minHeight: 320,
   });
 };
@@ -1645,6 +1650,7 @@ function hideQuadro(idQuadro) {
     "kanbanContainer",
     "skillsContainer",
     "financeContainer",
+    "recContainer",
   ];
   quadro.style.display = opening
     ? (flexQuadros.includes(idQuadro) ? "flex" : "block")
@@ -2014,13 +2020,14 @@ function setDailiesStatus(message) {
 // ROUTINE / TASKS / KANBAN render from data/routine.json + data/tasks.json
 // (tasks-projection.js). There is no input here anymore: `will task ...` and
 // `will done <routine>` own the data.
-// REC LIST / NEXT FEATURES / IDEAS used to live here.
+// NEXT FEATURES / IDEAS used to live here.
 // They were note-shaped, so they are notes now: the notebook holds them and
 // the Notes window draws them. In the terminal:
-//   will note "the bear" --section "Rec List"
 //   will note "bit about uber drivers" --section "Videos Ideas"
-// The old Supabase rows (recommendations, feature_backlog_items) import into
-// those sections with `will import legacy.json`.
+// The old Supabase rows (feature_backlog_items) import into that section with
+// `will import legacy.json`.
+// REC LIST used to live here too: it has its own store and view now
+// (`will rec add "the bear"`, recs-projection.js draws data/recs.json).
 
 // GAMIFY (skills) used to live here: board state in localStorage, trackers in
 // Supabase, the streak calendar and the daily counters. All of it is gone - the

@@ -50,9 +50,10 @@ test("The retired shortcuts stay retired", () => {
   assert.match(html, /hideQuadro\('clickupContainer'\)/);
   assert.doesNotMatch(html, /id="clickupIconDiv"/);
 
-  // Ideas, Rec List and Next Features are retired window and all: they were
+  // Ideas and Next Features are retired window and all: they were
   // note-shaped, so the notebook holds them now (see AGENTS.md).
-  ["ideasContainer", "recContainer", "nextFeatures"].forEach((id) => {
+  // The Rec List came back: it has its own store and `will rec` (recs-projection.js).
+  ["ideasContainer", "nextFeatures"].forEach((id) => {
     assert.doesNotMatch(html, new RegExp(`id="${id}"`), `${id} should be gone from index.html`);
     assert.doesNotMatch(html, new RegExp(`hideQuadro\\('${id}'\\)`), `${id} should have no entry point`);
   });

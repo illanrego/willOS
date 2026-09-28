@@ -1784,6 +1784,41 @@ display: flex;
   min-height: 14px;
 }
 
+/* REC LIST: a flex column like every migrated window - title bar on top, the
+   list scrolls underneath. Its body is #recPanel, never a calc() height. */
+#recContainer {
+  display: none;
+  flex-direction: column;
+  min-width: 360px;
+  min-height: 320px;
+  width: min(520px, 94vw);
+  height: min(86vh, 780px);
+  max-width: 96vw;
+  max-height: 96vh;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+#recContainer .titleBar {
+  flex: none;
+}
+
+#recPanel {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  overflow: auto;
+  padding: 10px;
+  box-sizing: border-box;
+  background: #c0c0c0;
+}
+
+#recList .rec-id {
+  float: right;
+  font-size: 12px;
+  color: #666;
+}
+
 /* NOTES */
 
 #notesContainer {

@@ -32,6 +32,12 @@ const MIGRATED_WINDOWS = [
     data: "data/notes.json",
   },
   {
+    id: "recContainer",
+    script: "recs-projection.js",
+    core: "recs-projection.js",
+    data: "data/recs.json",
+  },
+  {
     id: "plannerContainer",
     script: "planner-projection.js",
     core: "planner-projection.js",
@@ -214,6 +220,7 @@ test("every inline handler in index.html points at a defined function", () => {
     "projection-core.js",
     "content-projection.js",
     "notes-projection.js",
+    "recs-projection.js",
     "planner-projection.js",
     "tasks-projection.js",
     "skills-projection.js",

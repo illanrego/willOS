@@ -32,6 +32,12 @@ will note rm 7
 will note sections | will note section "Vagas"
 will note promote 7 --lane moc --kind vlog    # a line becomes a contentflow card
 
+# the rec list: films, series and specials to watch
+will rec add "deliverance (1972)"
+will rec [list] | will rec rm 3
+will rec import legacy.json                   # old Supabase recommendations rows
+will rec import --from-notes                  # move the parked "Rec List" notes section
+
 # routines (the old Dailies): an obligation, one tick per day
 will done morning-operator
 will undo morning-operator [--day 2026-09-20]
@@ -58,7 +64,7 @@ will fin list [--month 2026-08] | will fin rm 2
 will content board | will content lane teacher | will content next 1
 
 # plumbing
-will export [content notes routine skills tasks planner finance]   # render models
+will export [content notes recs routine skills tasks planner finance]   # render models
 will import legacy.json                                           # one-shot migration
 will where                                                        # store + data dirs
 ```
@@ -75,6 +81,7 @@ Render models: `data/<domain>.json` (`WILL_DATA_DIR` overrides), gitignored.
 |---|---|---|
 | Content | `data/content.json` | contentflow, via `will content` |
 | Notes | `data/notes.json` | `will note` |
+| Rec List | `data/recs.json` | `will rec` |
 | Routine (was Dailies) | `data/routine.json` | `will done` / `will routine` |
 | To-do | `data/tasks.json` | `will task` |
 | Kanban | `data/tasks.json` | `will task` |
@@ -82,7 +89,7 @@ Render models: `data/<domain>.json` (`WILL_DATA_DIR` overrides), gitignored.
 | Planner | `data/planner.json` | `will plan` |
 | Finance Log | `data/finance.json` | `will fin` |
 
-Retired outright: Ideas, Rec List and Next Features (they were note-shaped, so the
+Retired outright: Ideas and Next Features (they were note-shaped, so the
 notebook holds them), the old workout plan grid (Strong is the input now), and the old
 local + Supabase content board.
 
@@ -117,8 +124,9 @@ will import ~/Downloads/legacy.json
 
 It prints what landed where and reports tables it does not know instead of dropping them.
 Dailies become routines, todos become tasks, trackers become skills, kanban cards take
-their column state, plans and finance entries land in their stores, and the rec list and
-feature backlog become notes sections. The old tables stay in the database as history.
+their column state, plans and finance entries land in their stores, the rec list lands in
+its own store (`will rec`) and the feature backlog becomes a notes section. The old tables
+stay in the database as history.
 
 ## Run it
 
@@ -146,7 +154,7 @@ never talks to a database. `skills-projection.js` also publishes its model on
 Plain JS, no build step, no frameworks, stdlib-only Python. Retro-OS styling in
 `willos.css`, shell + window engine in `willos.js` (~3k lines, down from 9.5k at the
 fork), the CLI in `willcli/`, projections in `*-projection.js` with pure math in
-`*-core.js`, tests via `node --test` and `unittest` (77 node + 58 python).
+`*-core.js`, tests via `node --test` and `unittest` (77 node + 90 python).
 
 ## License
 

@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>willOS</title>
-    <link rel="stylesheet" href="willos.css?v=20260925-gamify-circles" />
+    <link rel="stylesheet" href="willos.css?v=20260928-recs" />
     <link rel="stylesheet" href="workout-v2.css?v=20260924-willos-fork" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Roboto:wght@400&display=swap">
     <link rel="stylesheet" href="win98.ttf">
@@ -14,13 +14,14 @@
     <script src="workout-core.js?v=20260924-willos-fork" defer></script>
     <script src="notes-core.js?v=20260924-willos-fork" defer></script>
     <script src="notes-projection.js?v=20260924-notes" defer></script>
+    <script src="recs-projection.js?v=20260928-recs" defer></script>
     <script src="planner-projection.js?v=20260924-planner" defer></script>
     <script src="tasks-projection.js?v=20260924-tasks" defer></script>
     <script src="skills-projection.js?v=20260925-gamify-circles" defer></script>
     <script src="finance-projection.js?v=20260924-finance" defer></script>
     <script src="projection-core.js?v=20260924-willos-fork" defer></script>
     <script src="content-projection.js?v=20260924-willos-fork" defer></script>
-    <script src="willos.js?v=20260924-willos-fork" defer></script>
+    <script src="willos.js?v=20260928-recs" defer></script>
     <script src="workout-v2.js?v=20260924-willos-fork" defer></script>
   </head>
   <body>
@@ -56,6 +57,10 @@
  <div class="icon" id="calendarIconDiv" onclick="clearDisplay(), hideQuadro('calendarContainer')">
      <img src="./imagens/w98_calendar.ico" width="60">
      <label>calendar</label>
+ </div>
+ <div class="icon" id="recIconDiv" onclick="hideQuadro('recContainer')">
+    <img src="./imagens/98icons/w98_netshow_notransm.ico" width="60">
+    <label>Rec List</label>
  </div>
  <div class="icon" id="workoutIconDiv" onclick="hideQuadro('workoutContainer')">
     <img src="./imagens/98icons/w98_battery.ico" width="60">
@@ -171,6 +176,17 @@
         <div id="plannerPanel">
           <p id="plannerStatus" class="projection-status">Ready.</p>
           <ul id="plannerList" class="projection-list"></ul>
+        </div>
+      </div>
+<!-- REC LIST -->
+      <div class="quadros" id="recContainer" style="display: none">
+        <div class="titleBar">
+          <h2>Rec List</h2>
+          <button onclick="hideQuadro('recContainer')">x</button>
+        </div>
+        <div id="recPanel">
+          <p id="recStatus" class="projection-status">Ready.</p>
+          <ul id="recList"></ul>
         </div>
       </div>
 <!-- NOTES -->
@@ -493,6 +509,7 @@
             <li onclick="hideQuadro('contentContainer'), hideAppMenu(), clickStart()"><img src="./imagens/98icons/w98_camera3_vid.ico" width="35" height="35">Content</li>
             <li onclick="hideQuadro('chatContainer'), hideAppMenu(), clickStart()"><img src="./imagens/98icons/w98_message_file.ico" width="35" height="35">Chat Assistant</li>
             <li onclick="hideQuadro('financeContainer'), hideAppMenu(), clickStart()"><img src="./imagens/98icons/w98_calculator.ico" width="35" height="35">Finance Log</li>
+            <li onclick="hideQuadro('recContainer'), hideAppMenu(), clickStart()"><img src="./imagens/98icons/w98_netshow_notransm.ico" width="35" height="35">Rec List</li>
             <li onclick="hideQuadro('notesContainer'), hideAppMenu(), clickStart()"><img src="./imagens/98icons/w98_note.ico" width="35" height="35">Notes</li>
             <li onclick="hideQuadro('plannerContainer'), hideAppMenu(), clickStart()"><img src="./imagens/98icons/w98_notepad_file.ico" width="35" height="35">Planner</li>
             <li onclick="hideQuadro('connectionsContainer'), hideAppMenu(), clickStart()"><img src="./imagens/98icons/w98_web_file.ico" width="35" height="35">Connections</li>
