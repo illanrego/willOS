@@ -6,10 +6,13 @@ window draws them grouped by state.
 
 from __future__ import annotations
 
+from datetime import date
+
 from . import store
 
 STATES = ("todo", "doing", "blocked", "done")
 DEFAULT_STATE = "todo"
+DONE_RETENTION_DAYS = 7
 
 
 def blank() -> dict:
@@ -75,6 +78,32 @@ def remove(payload: dict, task_id: int) -> dict:
         raise SystemExit(f"no task {task_id}")
     payload["tasks"].remove(task)
     return task
+
+
+def prune_done(payload: dict, keep_days: int = DONE_RETENTION_DAYS, today: str = "") -> list[dict]:
+    """Drop finished tasks so the done column cannot grow forever.
+
+    A task finished today counts as age 0 and survives keep_days=1; keep_days=0
+    means keep nothing. A done task with no done_at (a legacy/imported row) has
+    no age to compare, so it is treated as old and swept.
+    """
+    reference = date.fromisoformat(today or store.today_key())
+    removed, kept = [], []
+    for task in payload["tasks"]:
+        if task.get("state") != "done":
+            kept.append(task)
+            continue
+        stamp = str(task.get("done_at") or "")[:10]
+        try:
+            age = (reference - date.fromisoformat(stamp)).days
+        except ValueError:
+            age = None
+        if age is None or age >= int(keep_days):
+            removed.append(task)
+        else:
+            kept.append(task)
+    payload["tasks"] = kept
+    return removed
 
 
 def grouped(payload: dict) -> dict[str, list[dict]]:

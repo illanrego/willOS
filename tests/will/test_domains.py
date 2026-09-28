@@ -212,6 +212,64 @@ class TaskTest(DomainTestCase):
             tasks.remove(tasks.load(), 99)
 
 
+class TaskPruneTest(DomainTestCase):
+    """Finished tasks are swept on a window, so the done column cannot grow forever."""
+
+    def finish(self, payload, text, day):
+        task = tasks.add(payload, text)
+        tasks.set_state(payload, task["id"], "done")
+        task["done_at"] = day
+        return task
+
+    def test_a_finished_task_inside_the_window_survives(self):
+        payload = tasks.load()
+        self.finish(payload, "recent", "2026-09-24")
+        self.assertEqual(tasks.prune_done(payload, keep_days=7, today="2026-09-28"), [])
+        self.assertEqual(len(payload["tasks"]), 1)
+
+    def test_a_finished_task_past_the_window_is_swept(self):
+        payload = tasks.load()
+        self.finish(payload, "stale", "2026-09-19")
+        removed = tasks.prune_done(payload, keep_days=7, today="2026-09-28")
+        self.assertEqual([task["text"] for task in removed], ["stale"])
+        self.assertEqual(payload["tasks"], [])
+
+    def test_keep_days_zero_keeps_nothing_not_even_todays(self):
+        payload = tasks.load()
+        self.finish(payload, "today", "2026-09-28")
+        self.assertEqual(len(tasks.prune_done(payload, keep_days=0, today="2026-09-28")), 1)
+
+    def test_a_finished_task_with_no_stamp_is_treated_as_old(self):
+        payload = tasks.load()
+        task = tasks.add(payload, "legacy import")
+        tasks.set_state(payload, task["id"], "done")
+        task["done_at"] = ""
+        removed = tasks.prune_done(payload, keep_days=7, today="2026-09-28")
+        self.assertEqual([item["text"] for item in removed], ["legacy import"])
+
+    def test_unfinished_tasks_are_never_touched(self):
+        payload = tasks.load()
+        tasks.add(payload, "still todo")
+        tasks.add(payload, "still doing", state="doing")
+        self.assertEqual(tasks.prune_done(payload, keep_days=0, today="2026-09-28"), [])
+        self.assertEqual(len(payload["tasks"]), 2)
+
+    def test_every_task_command_sweeps_the_done_column(self):
+        import contextlib
+        import io
+
+        from willcli import cli
+        payload = tasks.load()
+        task = tasks.add(payload, "finished ages ago")
+        tasks.set_state(payload, task["id"], "done")
+        task["done_at"] = "2026-01-01"
+        store.save("tasks", payload)
+
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(cli.main(["task"]), 0)
+        self.assertEqual(tasks.load()["tasks"], [])
+
+
 class PlannerTest(DomainTestCase):
     def test_a_plan_needs_a_title_and_an_ordered_range(self):
         with self.assertRaises(SystemExit):

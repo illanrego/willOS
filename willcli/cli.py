@@ -91,6 +91,7 @@ USAGE_EXAMPLES = {
         "will task doing 4                               shorthand for move",
         "will task move 4 blocked",
         "will task rm 4",
+        "will task prune --keep-days 0                   drop every finished task",
     ],
     "plan": [
         'will plan add "finish willOS" --start 2026-09-24 --end 2026-09-30 --note "one window at a time"',
@@ -274,10 +275,12 @@ def build_parser() -> argparse.ArgumentParser:
     task = sub.add_parser("task", help="tasks: the To-do list and the Kanban board",
                    formatter_class=argparse.RawDescriptionHelpFormatter)
     with_examples(task, "task", "tasks: the To-do list and the Kanban board")
-    task.add_argument("action", nargs="?", default="list", help="list (default) | add | done | doing | move | rm")
+    task.add_argument("action", nargs="?", default="list", help="list (default) | add | done | doing | move | rm | prune")
     task.add_argument("args", nargs="*", help="task text, or a task id")
     task.add_argument("--state", default="", help="todo | doing | blocked | done")
     task.add_argument("--lane", default="")
+    task.add_argument("--keep-days", type=int, default=tasks.DONE_RETENTION_DAYS,
+                      help=f"prune: how long a finished task is kept (default {tasks.DONE_RETENTION_DAYS}; 0 keeps none)")
 
     plan = sub.add_parser("plan", help="planner: title, start, end, one note",
                    formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -553,6 +556,23 @@ def cmd_skill(args) -> int:
 def cmd_task(args) -> int:
     payload = tasks.load()
     action = args.action or "list"
+
+    # Finished tasks must not pile up: every task command sweeps the done column
+    # first, so the retention window is enforced without anyone remembering to.
+    pruned = tasks.prune_done(payload, args.keep_days)
+    if pruned:
+        store.save("tasks", payload)
+        auto_export(["tasks"])
+        if action != "prune":
+            print(f"pruned {len(pruned)} finished task(s) (kept {args.keep_days} day(s))")
+
+    if action == "prune":
+        if pruned:
+            ids = ", ".join(str(task["id"]) for task in pruned)
+            print(f"pruned {len(pruned)} finished task(s): {ids}")
+        else:
+            print(f"nothing to prune (no task finished {args.keep_days}+ day(s) ago)")
+        return 0
 
     if action == "add":
         text = " ".join(args.args).strip()
