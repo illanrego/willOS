@@ -1,6 +1,7 @@
-// Routine (old Dailies), To-do and Kanban are projections now: they draw
-// data/routine.json + data/tasks.json, written by the will CLI. No inputs, no
-// localStorage, no Supabase sync - tests/shell-ui.test.js enforces the contract.
+// To-do and Kanban are projections now: they draw data/tasks.json, written by
+// the will CLI. No inputs, no localStorage, no Supabase sync -
+// tests/shell-ui.test.js enforces the contract. The Routine window is retired
+// (floors are weekly minimums, `will min`), and it must not come back.
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
@@ -30,14 +31,18 @@ function windowMarkup(id) {
   assert.fail(`unbalanced markup for ${id}`);
 }
 
-test("the Routine window shows ticks, not an add form", () => {
-  const markup = windowMarkup("dailiesContainer");
-  ["<input", "<select", "<textarea", "<form"].forEach((snippet) => {
-    assert.ok(!markup.includes(snippet), `#dailiesContainer must stay read-only, found ${snippet}`);
+test("the retired Routine window cannot come back", () => {
+  // The daily-obligation model is gone: floors are weekly minimums now
+  // (`will min`), so there is no per-day Routine window to draw.
+  const html = read("index.html");
+  const engine_source = read("willos.js");
+  ["dailiesContainer", "routineList", "setDailiesStatus", "routine.json"].forEach((snippet) => {
+    assert.ok(!html.includes(snippet), `index.html still carries ${snippet}`);
+    assert.ok(!engine_source.includes(snippet), `willos.js still carries ${snippet}`);
   });
-  assert.match(markup, /id="routineList"/);
-  assert.match(markup, /id="dailiesStatus"/);
-  assert.match(markup, /<h2>Routine<\/h2>/);
+  assert.ok(!read("tasks-projection.js").includes("routine"), "tasks-projection.js still draws routines");
+  const exporter = read("willcli/exporter.py");
+  assert.ok(!exporter.includes("export_routine"), "the routine exporter is retired");
 });
 
 test("the To-do and Kanban windows lost their inputs", () => {
@@ -85,7 +90,6 @@ test("the task/daily/kanban machinery is gone from the shell", () => {
 test("the projections read the render models and only read", () => {
   const projection = read("tasks-projection.js");
   assert.match(projection, /const TASKS_PROJECTION_URL = "data\/tasks\.json"/);
-  assert.match(projection, /const ROUTINE_PROJECTION_URL = "data\/routine\.json"/);
   assert.match(projection, /fetch\(url, \{ cache: "no-store" \}\)/);
   assert.ok(!projection.includes("supabase"), "no database in the projection");
   assert.ok(!projection.includes("localStorage.setItem"), "no writes in the projection");
@@ -96,10 +100,8 @@ test("the projections load before the shell runs", () => {
   assert.ok(html.indexOf("tasks-projection.js") < html.indexOf("willos.js"));
 });
 
-test("both exporters exist behind the render models", () => {
+test("the exporter behind the render models exists", () => {
   const exporter = read("willcli/exporter.py");
   assert.match(exporter, /def export_tasks\(/);
-  assert.match(exporter, /def export_routine\(/);
   assert.match(exporter, /"tasks": export_tasks/);
-  assert.match(exporter, /"routine": export_routine/);
 });

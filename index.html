@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>willOS</title>
-    <link rel="stylesheet" href="willos.css?v=20260928-recs" />
+    <link rel="stylesheet" href="willos.css?v=20260928-weekly-minimums" />
     <link rel="stylesheet" href="workout-v2.css?v=20260924-willos-fork" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Roboto:wght@400&display=swap">
     <link rel="stylesheet" href="win98.ttf">
@@ -16,12 +16,12 @@
     <script src="notes-projection.js?v=20260924-notes" defer></script>
     <script src="recs-projection.js?v=20260928-recs" defer></script>
     <script src="planner-projection.js?v=20260924-planner" defer></script>
-    <script src="tasks-projection.js?v=20260924-tasks" defer></script>
-    <script src="skills-projection.js?v=20260925-gamify-circles" defer></script>
+    <script src="tasks-projection.js?v=20260928-weekly-minimums" defer></script>
+    <script src="skills-projection.js?v=20260928-weekly-minimums" defer></script>
     <script src="finance-projection.js?v=20260924-finance" defer></script>
-    <script src="projection-core.js?v=20260924-willos-fork" defer></script>
-    <script src="content-projection.js?v=20260924-willos-fork" defer></script>
-    <script src="willos.js?v=20260928-recs" defer></script>
+    <script src="projection-core.js?v=20260928-weekly-minimums" defer></script>
+    <script src="content-projection.js?v=20260928-weekly-minimums" defer></script>
+    <script src="willos.js?v=20260928-weekly-minimums" defer></script>
     <script src="workout-v2.js?v=20260924-willos-fork" defer></script>
   </head>
   <body>
@@ -41,10 +41,6 @@
 
       <img src="./imagens/98icons/w98_joystick.ico" width="60">
       <label>Gamify</label>
- </div>
- <div class="icon" id="todoIconDiv" onclick="hideQuadro('dailiesContainer')">
- <img src="./imagens/98icons/w98_wia_img_check.ico"  width="60">
- <label>Routine</label>
  </div>
  <div class="icon" id="todoListIconDiv" onclick="hideQuadro('todoContainer')">
     <img src="./imagens/98icons/w98_message_tack.ico" width="60">
@@ -124,17 +120,6 @@
             </div>
           </div>
         </div>
-	<!-- ROUTINE (the old Dailies) -->
-		<div class="quadros" id="dailiesContainer" style="display: none">
-		  <div class="titleBar">
-	          <h2>Routine</h2>
-	          <button onclick="hideQuadro('dailiesContainer')">x</button>
-	           </div>
-      <div id="dailiesWindowBody">
-        <p id="dailiesStatus" class="projection-status">Ready.</p>
-        <div id="routineList" class="routine-list"></div>
-      </div>
-			</div>
 <!-- CONTENT BOARD -->
       <div class="quadros" id="contentContainer" style="display: none">
         <div class="titleBar">
@@ -505,7 +490,6 @@
             <li onclick="hideQuadro('calendarContainer'), hideAppMenu(), clickStart()"><img src="./imagens/w98_calendar.ico" width="35" height="35"> Calendar</li>
             <li onclick="clearDisplay(), hideQuadro('calcContainer'), hideAppMenu(), clickStart()"><img src="./imagens/w98_calculator.ico" width="35" height="35"> Calculator</li>
             <li onclick="hideQuadro('wallpContainer'), hideAppMenu(), clickStart()"><img src="./imagens/w98_directory_pictures.ico" width="35" height="35">Wallpaper</li>
-            <li onclick="hideQuadro('dailiesContainer'), hideAppMenu(), clickStart()"><img src="./imagens/98icons/w98_wia_img_check.ico" width="35" height="35">Routine</li>
             <li onclick="hideQuadro('contentContainer'), hideAppMenu(), clickStart()"><img src="./imagens/98icons/w98_camera3_vid.ico" width="35" height="35">Content</li>
             <li onclick="hideQuadro('chatContainer'), hideAppMenu(), clickStart()"><img src="./imagens/98icons/w98_message_file.ico" width="35" height="35">Chat Assistant</li>
             <li onclick="hideQuadro('financeContainer'), hideAppMenu(), clickStart()"><img src="./imagens/98icons/w98_calculator.ico" width="35" height="35">Finance Log</li>

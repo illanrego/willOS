@@ -64,6 +64,9 @@ function normalizeSkillsModel(raw) {
       today: Number(skill.today) || 0,
       streak: Number(skill.streak) || 0,
       monthTotal: Number(skill.month_total) || 0,
+      // the weekly floor: x = occurrences this week, y = the minimum (0 = none)
+      week: Number(skill.week) || 0,
+      weeklyMinimum: Number(skill.weekly_minimum) || 0,
     }))
     .filter((skill) => skill.code);
 
@@ -230,6 +233,25 @@ function todayDisplay(code) {
   return String(Number(value) || 0);
 }
 
+/**
+ * The x/y label: this week's occurrences over the weekly floor.
+ *
+ * A skill with no floor shows the plain count instead, so something that runs at
+ * its own pace (comics, freela) is never read as a shortfall.
+ */
+function weekQuota(skill) {
+  const span = document.createElement("span");
+  span.id = `weekCount${baseSkillCode(skill.code)}`;
+  span.className = "gamify-week-quota";
+  if (!skill.weeklyMinimum) {
+    span.textContent = String(skill.week);
+    return span;
+  }
+  span.textContent = `${skill.week}/${skill.weeklyMinimum}`;
+  span.classList.toggle("gamify-week-quota--met", skill.week >= skill.weeklyMinimum);
+  return span;
+}
+
 function buildSkillCard(skill) {
   const base = baseSkillCode(skill.code);
   const meta = skillMeta(skill.code);
@@ -274,7 +296,7 @@ function buildSkillCard(skill) {
   const today = document.createElement("span");
   today.id = `dailyCount${base}`;
   today.textContent = todayDisplay(skill.code);
-  line.append("lvl:", lvl, ` total:`, total, " today:", today);
+  line.append("lvl:", lvl, ` total:`, total, ` week:`, weekQuota(skill), " today:", today);
   right.appendChild(line);
 
   const meter = document.createElement("meter");

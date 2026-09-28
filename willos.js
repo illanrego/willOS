@@ -205,13 +205,12 @@ function getWeekNumber(date) {
   return weekNumber;
 }
 
-// TASKS (To-do + Dailies) and KANBAN
-// These windows are READ-ONLY projections now, drawn from data/tasks.json and
-// data/routine.json by tasks-projection.js. The old local + Supabase task
-// machinery (add/toggle/remove, dailies, kanban cards, the task input, the
-// skill mapping) was removed on purpose - all of it is written in the terminal:
+// TASKS (To-do + Kanban)
+// These windows are READ-ONLY projections now, drawn from data/tasks.json by
+// tasks-projection.js. The old local + Supabase task machinery (add/toggle/
+// remove, dailies, kanban cards, the task input, the skill mapping) was removed
+// on purpose - all of it is written in the terminal:
 //   will task add "..." [--state doing]  ·  will task done <id>
-//   will done morning-operator           ·  will routine list
 // BACKEND / SUPABASE
 
 const BACKEND_IMPORT_STATE_KEY = "startpageBackendImport_v1";
@@ -1425,7 +1424,6 @@ function skillThresholdMax(skillCount) {
 window.onload = function () {
   draggable("skillsContainer");
   draggable("pomodoro");
-  draggable("dailiesContainer");
   draggable("todoContainer");
   draggable("recContainer");
   draggable("ideasContainer");
@@ -1447,10 +1445,6 @@ window.onload = function () {
     minWidth: 540,
     minHeight: 360,
     onResize: scheduleSkillsRender,
-  });
-  makeResizable("dailiesContainer", {
-    minWidth: 420,
-    minHeight: 360,
   });
   makeResizable("contentContainer", {
     minWidth: 460,
@@ -1645,7 +1639,6 @@ function hideQuadro(idQuadro) {
     "notesContainer",
     "contentContainer",
     "plannerContainer",
-    "dailiesContainer",
     "todoContainer",
     "kanbanContainer",
     "skillsContainer",
@@ -1989,8 +1982,6 @@ function hideAppMenu2() {
   appMenu.style.display = "none";
 }
 
-// (the dailies UI used to live here - see the TASKS / KANBAN note above)
-
 // CONTENT BOARD ------------------------------------------------------------
 // The month board is READ-ONLY and lives in content-projection.js: it draws
 // data/projection.json, which the CLI exports from the contentflow ledger.
@@ -2010,16 +2001,10 @@ function getWorkerProxyBaseUrl() {
   return getWorkerBaseUrl();
 }
 
-function setDailiesStatus(message) {
-  const status = document.getElementById("dailiesStatus");
-  if (!status) return;
-  status.textContent = message;
-}
 
 
-// ROUTINE / TASKS / KANBAN render from data/routine.json + data/tasks.json
-// (tasks-projection.js). There is no input here anymore: `will task ...` and
-// `will done <routine>` own the data.
+// TASKS / KANBAN render from data/tasks.json (tasks-projection.js). There is no
+// input here anymore: `will task ...` owns the data.
 // NEXT FEATURES / IDEAS used to live here.
 // They were note-shaped, so they are notes now: the notebook holds them and
 // the Notes window draws them. In the terminal:
@@ -2032,8 +2017,8 @@ function setDailiesStatus(message) {
 // GAMIFY (skills) used to live here: board state in localStorage, trackers in
 // Supabase, the streak calendar and the daily counters. All of it is gone - the
 // terminal owns the numbers (`will skill coding +1`, `will skill list`) and the
-// window only draws data/skills.json. Ticking a skill no longer mirrors into a
-// routine: obligation and occurrence stay separate.
+// window only draws data/skills.json. There is no per-day obligation flag: a
+// floor is a weekly minimum (`will min`), and an occurrence is just a log.
 // CHATBOT FUNCTIONALITY
 let messages = [
   {

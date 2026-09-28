@@ -44,12 +44,6 @@ const MIGRATED_WINDOWS = [
     data: "data/planner.json",
   },
   {
-    id: "dailiesContainer",
-    script: "tasks-projection.js",
-    core: "tasks-projection.js",
-    data: "data/routine.json",
-  },
-  {
     id: "todoContainer",
     script: "tasks-projection.js",
     core: "tasks-projection.js",

@@ -27,7 +27,9 @@ function setContentStatus(message) {
 
 function emptyProjection() {
   const core = contentProjectionCore();
-  return core ? core.normalizeProjection(null) : { generatedAt: "", source: "", lanes: [], days: {}, cards: [] };
+  return core
+    ? core.normalizeProjection(null)
+    : { generatedAt: "", source: "", lanes: [], days: {}, cards: [], week: { start: "", end: "" }, weekly: {} };
 }
 
 async function loadContentProjection() {
@@ -70,12 +72,14 @@ function renderContentLaneLegend() {
   host.innerHTML = "";
   lanes.forEach((lane) => {
     const entry = summary[lane] || { count: 0, lastDateKey: "" };
+    const quota = core.laneQuota(projection, lane);
     const chip = document.createElement("span");
     chip.className = "content-lane-chip";
     chip.dataset.lane = lane;
-    chip.title = entry.lastDateKey
-      ? `${core.laneLabel(lane)} - last posted ${entry.lastDateKey}`
-      : `${core.laneLabel(lane)} - nothing posted yet`;
+    const last = entry.lastDateKey ? `last posted ${entry.lastDateKey}` : "nothing posted yet";
+    chip.title = quota.minimum
+      ? `${core.laneLabel(lane)} - ${quota.count}/${quota.minimum} this week (${projection.week.start}..${projection.week.end}) · ${last}`
+      : `${core.laneLabel(lane)} - ${last}`;
 
     const dot = document.createElement("span");
     dot.className = "content-lane-chip-dot";
@@ -89,6 +93,17 @@ function renderContentLaneLegend() {
     count.textContent = String(entry.count);
 
     chip.append(dot, label, count);
+
+    // The x/y floor, when this lane has one. Lanes without a floor run at their
+    // own pace and just keep the plain month count above.
+    if (quota.minimum) {
+      const quotaEl = document.createElement("span");
+      quotaEl.className = "content-lane-chip-quota";
+      quotaEl.classList.toggle("content-lane-chip-quota--met", quota.count >= quota.minimum);
+      quotaEl.textContent = `${quota.count}/${quota.minimum}`;
+      chip.appendChild(quotaEl);
+    }
+
     host.appendChild(chip);
   });
 }

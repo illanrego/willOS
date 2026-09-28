@@ -123,13 +123,38 @@
       ? source.cards.filter((card) => card && typeof card === "object")
       : [];
 
+    // The weekly floor is stamped on by the exporter from the planning layer.
+    // contentflow itself never knows about cadence.
+    const weekly = {};
+    const rawWeekly = source.weekly && typeof source.weekly === "object" ? source.weekly : {};
+    Object.keys(rawWeekly).forEach((lane) => {
+      const entry = rawWeekly[lane];
+      if (!entry || typeof entry !== "object") return;
+      weekly[lane] = {
+        count: Number(entry.count) || 0,
+        minimum: Number(entry.minimum) || 0,
+      };
+    });
+    const rawWeek = source.week && typeof source.week === "object" ? source.week : {};
+
     return {
       generatedAt: typeof source.generated_at === "string" ? source.generated_at : "",
       source: typeof source.source === "string" ? source.source : "",
       lanes,
       days,
       cards,
+      week: {
+        start: typeof rawWeek.start === "string" ? rawWeek.start : "",
+        end: typeof rawWeek.end === "string" ? rawWeek.end : "",
+      },
+      weekly,
     };
+  }
+
+  /** This week's count against a lane's floor, or {count: 0, minimum: 0}. */
+  function laneQuota(projection, lane) {
+    const entry = (projection && projection.weekly && projection.weekly[lane]) || null;
+    return { count: Number(entry?.count) || 0, minimum: Number(entry?.minimum) || 0 };
   }
 
   /** Lane codes posted on a day, ordered by LANE_STYLE so the dots are stable. */
@@ -191,6 +216,7 @@
     normalizeProjection,
     lanesOn,
     laneSummary,
+    laneQuota,
     monthPostedDays,
     inFlight,
   };

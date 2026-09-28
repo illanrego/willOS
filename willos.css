@@ -5,15 +5,10 @@
   --text-color: white;
 }
 
-
-
-
 @font-face {
   font-family: "win98";
   src: url("win98.ttf") format('truetype');
 }
-
-
 
   body {
     font-family: 'win98', sans-serif;
@@ -69,8 +64,6 @@
    
   }
 
-
-
   h3 {
     font-size: 20px;
     color: rgb(64, 255, 64);
@@ -92,7 +85,6 @@
     
   
   }
-
 
 #appMenu label {
   font-family: "win98", sans-serif;
@@ -643,18 +635,6 @@
     cursor: default;
 }
 
-/* Migrated windows render a read-only projection from data/<window>.json. */
-#dailiesContainer {
-    display: none;
-    flex-direction: column;
-    min-width: 440px;
-    min-height: 300px;
-    max-width: 96vw;
-    max-height: 96vh;
-    overflow: hidden;
-    box-sizing: border-box;
-}
-
 #todoContainer {
     display: none;
     flex-direction: column;
@@ -675,64 +655,7 @@
     max-height: 96vh;
     overflow: hidden;
     box-sizing: border-box;
-}
-
-#dailiesContainer .titleBar,
-#todoContainer .titleBar,
-#kanbanContainer .titleBar {
-    flex: none;
-}
-
-#dailiesWindowBody,
-#todoPanel,
-#kanbanBoard {
-    flex: 1 1 auto;
-    min-height: 0;
-    overflow: auto;
-}
-
-.routine-list {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    margin: 6px 8px 10px;
-}
-
-.routine-row {
-    display: flex;
-    align-items: baseline;
-    gap: 8px;
-    padding: 4px 6px;
-    background: #fafafa;
-    border: 1px solid #dcdcdc;
-    font-family: "win98", sans-serif;
-    font-size: 12px;
-    text-align: left;
-    color: #111;
-}
-
-.routine-mark {
-    flex: none;
-    width: 16px;
-    text-align: center;
-    font-weight: bold;
-    color: #000080;
-}
-
-.routine-mark--off {
-    color: #c0c0c0;
-}
-
-.routine-label {
-    flex: 1 1 auto;
-    min-width: 0;
-}
-
-.routine-meta {
-    flex: none;
-    font-size: 11px;
-    color: #555;
-}
+}#todoContainer .titleBar,#kanbanContainer .titleBar #todoPanel,#kanbanBoard 
 
 #skillsContainer {
     display: none;
@@ -1181,8 +1104,6 @@
         overflow-y: scroll;
     }
 
-
-
   #calcContainer {
     display: none;
     max-width: 250px;
@@ -1251,7 +1172,6 @@
     z-index: 2;
   }
 
-
   #appMenu {
     border-right: 3px solid #222222;
     border-bottom: 3px solid #222222;
@@ -1270,7 +1190,6 @@
     width: 100%;
     margin-top: -2vh; 
   }
-
 
   #linkContainer {
     display: flex;
@@ -1360,10 +1279,6 @@
   {
 	font-size: large;
  }
-
-#dailiesContainer label {
-	font-size: 12px;
-}
  #charBox img {
 	margin: 10px auto 10px auto;
 	border: 1px solid black;
@@ -1399,7 +1314,6 @@ meter {
     margin: 5px 0;
  }
 
-
  .skillInfo {
     display: flex;
     justify-content: space-between;
@@ -1414,13 +1328,10 @@ meter {
    gap: 5px;
 }
 
-
-
  #projetosContainer {
   display: none;
   max-width: 600px;
 }
-
 
  .projetoBox {
   border: 1px solid rgb(11, 6, 45);
@@ -1430,7 +1341,6 @@ meter {
   flex-direction: row;
   background-color: white;
 }
-
 
 .projetoDetails {
   display: flex;
@@ -1442,18 +1352,15 @@ meter {
   padding-left: 8px;
 }
 
-
 .projetoInfo {
   display: flex;
   justify-content: space-between;
 }
 
-
 .skillInfo > label {
     display: flex;
     align-self: center;
 }
-
 
 label {
   font-size: x-large;
@@ -1570,9 +1477,7 @@ label {
   margin-left: 10px;
  }
 
-
  /* POMODORO CONTENTS */
-
 
 #timer-container {
     display: flex;
@@ -1596,7 +1501,6 @@ label {
     gap: 10px;
 }
 
-
 button {
    
   font-size: 1.2rem;
@@ -1612,14 +1516,12 @@ button {
  
 }
 
-
 button:active {
   border-bottom: 3px solid #DDDDDD;
   border-right: 3px solid #EEEEEE;
   border-left: 3px solid #222222;
   border-top: 3px solid #222222;
 }
-
 
 .projetoBtn {
   height:70px;
@@ -1636,8 +1538,6 @@ button:active {
   background-color: #666666;
   color: white;
 }
-
-
 
 #todoContainer button,
 #recContainer button {
@@ -1681,7 +1581,6 @@ display: flex;
 #todoContainer #todoAddBtn {
   min-width: 52px;
 }
-
 
 #ideasContainer {
   width: min(92vw, 600px);
@@ -1988,7 +1887,6 @@ th {
   color: white;
 }
 
-
 #searchWeb {
   min-height: 100px;
   flex: 1 300px;
@@ -2022,104 +1920,10 @@ th {
   display: block;
 }
 
-#dailiesContainer {
-  display: none;
-  min-width: 420px;
-  min-height: 360px;
-  width: min(620px, 58vw);
-  height: min(80vh, 680px);
-  max-width: 94vw;
-  max-height: 94vh;
-  overflow: hidden;
-  box-sizing: border-box;
-}
-
-#dailiesWindowBody {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  height: calc(100% - 34px);
-  padding: 10px;
-  box-sizing: border-box;
-}
-
-#dailiesStatusSection {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  min-height: 0;
-  flex: 1 1 auto;
-  padding: 8px;
-  border: 1px solid #000;
-  background: #efefef;
-  box-shadow: inset -1px -1px 0 #7a7a7a, inset 1px 1px 0 #ffffff;
-}
-
-#dailiesStatus {
-  margin: 0;
-  font-size: 11px;
-  color: #111;
-}
-
 #tasklistContainer {
   flex: 1 1 auto;
   overflow-y: auto;
   min-height: 0;
-}
-
-#dailiesList {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  border: 1px solid #7d7d7d;
-  box-shadow: inset 1px 1px 0 #ffffff, inset -1px -1px 0 #a9a9a9;
-  background: #fff;
-  min-height: 160px;
-  height: 100%;
-  overflow-y: auto;
-}
-
-#dailiesContainer #dailiesList li.todo-task-item {
-  margin: 0;
-  padding: 6px 8px;
-  background: #efefef;
-  border: 1px solid #9d9d9d;
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 8px;
-  align-items: center;
-}
-
-#dailiesContainer .todo-task-actions button {
-  width: auto;
-  min-width: 28px;
-  height: 24px;
-  margin: 0;
-  padding: 0 8px 2px;
-  font-size: 12px;
-}
-
-#dailiesContainer .todo-task-done {
-  background: #b8dca7;
-}
-
-#dailiesContainer .todo-task-remove {
-  min-width: 24px;
-  padding: 0 6px 2px;
-}
-
-#dailiesContainer .todo-task-badge--skill {
-  background: #efe3ff;
-  color: #4d2f7a;
-}
-
-/* The name sits above its own description, so a daily can say what done means. */
-#dailiesContainer .todo-task-main {
-  flex-direction: column;
-  align-items: flex-start;
 }
 
 .todo-task-title-row {
@@ -2139,19 +1943,6 @@ th {
   overflow-wrap: anywhere;
 }
 
-#dailiesContainer .todo-task-note {
-  min-width: 44px;
-}
-
-#dailiesContainer .todo-task-text--done {
-  text-decoration: line-through;
-  opacity: 0.7;
-}
-
-#dailiesContainer .todo-task-text--desynced {
-  color: #7a5b18;
-}
-
 #addDailyContainer {
   margin-top: auto;
   display: grid;
@@ -2161,12 +1952,6 @@ th {
   border: 1px solid #000;
   background: #d6d6d6;
   box-shadow: inset -1px -1px 0 #7a7a7a, inset 1px 1px 0 #ffffff;
-}
-
-#dailiesContainer #dailyInput {
-  flex: 1 1 auto;
-  width: auto;
-  margin: 0;
 }
 
 #dailySkillSelect {
@@ -2198,7 +1983,6 @@ th {
   flex-direction: column;
   border: 1px solid black; 
 
-
 } 
 
 #taskList li,
@@ -2206,8 +1990,6 @@ th {
   margin: 6px 2px;
   color: black;
   list-style: lower-greek;
-
-
 
 }
 
@@ -2291,11 +2073,6 @@ th {
 }
   
 
-
-
-
-
-
 #calculator {
   text-align: center;
   padding: 20px 0px;
@@ -2305,15 +2082,12 @@ th {
  
 }
 
-
-
 input {
   width: 40px;
   height: 40px;
   margin: 5px;
   font-size: 18px;
 }
-
 
 input[type="text"] {
   width: 200px;
@@ -2348,8 +2122,6 @@ legend {
   background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
 }
 
-
-
 .titleBar button {
   margin: 3px;
   width: 25px;
@@ -2373,7 +2145,6 @@ legend {
   pointer-events: none;
   opacity: 0.65;
 }
-
 
 #calendarContainer td:nth-of-type(1) {
   background-color: var(--secondary-color);
@@ -4114,15 +3885,6 @@ legend {
     flex: 1 1 auto;
   }
 
-  /* ----- DAILIES ----- */
-  #dailiesContainer {
-    width: 100vw !important;
-    max-width: 100vw !important;
-    min-width: 0 !important;
-    height: auto !important;
-    max-height: none !important;
-  }
-
   /* ----- TODO + REC ----- */
   #todoContainer,
   #recContainer {
@@ -4670,4 +4432,22 @@ legend {
   .planner-status-card {
     grid-template-columns: 1fr;
   }
+}
+
+/* The weekly x/y: occurrences this week over the floor the planning layer set.
+   A skill or lane with no floor shows a plain count, never a shortfall. */
+.gamify-week-quota,
+.content-lane-chip-quota {
+  font-weight: bold;
+  color: #7a4a00;
+}
+
+.gamify-week-quota--met,
+.content-lane-chip-quota--met {
+  color: #0b6b2f;
+}
+
+.content-lane-chip-quota {
+  margin-left: 4px;
+  font-size: 11px;
 }
