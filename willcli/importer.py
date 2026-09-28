@@ -15,7 +15,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from . import finance, notes, planner, routine, skills, store, tasks
+from . import finance, notes, planner, recs, routine, skills, store, tasks
 
 KANBAN_STATE_HINTS = (
     ("block", "blocked"),
@@ -169,7 +169,8 @@ def import_finance(payload: dict, rows: list) -> int:
 
 
 def import_recommendations(payload: dict, rows: list) -> int:
-    return import_text_lines(payload, rows, "Rec List")
+    """The old Supabase rec list is its own store now, not a notes section."""
+    return recs.import_rows(payload, rows)
 
 
 def import_text_lines(payload: dict, rows: list, section: str) -> int:
@@ -241,13 +242,15 @@ def run(source: Path, replace: bool = False) -> dict:
         store.save("finance", payload)
         touched.append("finance")
 
-    if payload_in.get("recommendations") or payload_in.get("feature_backlog_items"):
+    if payload_in.get("recommendations"):
+        payload = recs.load()
+        report["recs"] = import_recommendations(payload, payload_in["recommendations"])
+        store.save("recs", payload)
+        touched.append("recs")
+
+    if payload_in.get("feature_backlog_items"):
         payload = notes.load()
-        found = 0
-        if payload_in.get("recommendations"):
-            found += import_recommendations(payload, payload_in["recommendations"])
-        if payload_in.get("feature_backlog_items"):
-            found += import_text_lines(payload, payload_in["feature_backlog_items"], "Next Features")
+        found = import_text_lines(payload, payload_in["feature_backlog_items"], "Next Features")
         store.save("notes", payload)
         report["notes"] = int(report.get("notes", 0)) + found
         if "notes" not in touched:

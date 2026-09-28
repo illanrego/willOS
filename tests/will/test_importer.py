@@ -6,7 +6,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from willcli import finance, importer, notes, planner, routine, skills, tasks
+from willcli import finance, importer, notes, planner, recs, routine, skills, tasks
 
 
 class ImporterTest(unittest.TestCase):
@@ -96,7 +96,7 @@ class ImporterTest(unittest.TestCase):
         self.assertEqual(states, {"one": "todo", "two": "doing", "three": "done"})
 
     def test_plans_finance_and_recommendations_land_in_their_stores(self):
-        self.run_import(
+        report = self.run_import(
             {
                 "planner_plans": [
                     {"title": "Course launch", "start_date": "2026-09-20", "end_date": "2026-09-30", "note": "sell"},
@@ -124,8 +124,9 @@ class ImporterTest(unittest.TestCase):
         self.assertEqual(entries[0]["amount_cents"], 14990)
         self.assertEqual(entries[0]["category"], "education")
 
-        lines = [line["text"] for _, line in notes.section_lines(notes.load())]
+        lines = [row["text"] for row in recs.rows(recs.load())]
         self.assertEqual(lines, ["The Bear"])
+        self.assertEqual(report["recs"], 1)
 
     def test_unknown_tables_are_reported_not_silently_dropped(self):
         report = self.run_import({"mystery_table": [{"a": 1}], "tasks": [{"text": "x", "task_type": "todo"}]})

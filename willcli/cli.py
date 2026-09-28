@@ -26,6 +26,7 @@ from . import (
     importer,
     notes,
     planner,
+    recs,
     routine,
     skills,
     store,
@@ -33,6 +34,7 @@ from . import (
 )
 
 NOTE_ACTIONS = ("add", "list", "rm", "section", "sections", "promote", "import", "counts")
+REC_ACTIONS = ("add", "list", "rm", "import")
 
 
 USAGE_EXAMPLES = {
@@ -52,6 +54,13 @@ USAGE_EXAMPLES = {
         "will note sections                              sections and line counts",
         "will note rm 7",
         "will note import rows.json --replace            one-time import of old rows",
+    ],
+    "rec": [
+        'will rec add "deliverance (1972)"                one to watch',
+        "will rec list                                  the whole list, with ids",
+        "will rec rm 3                                  drop one",
+        'will rec import legacy.json                    old Supabase recommendations rows',
+        "will rec import --from-notes                   move the parked 'Rec List' notes section",
     ],
     "routine": [
         "will routine                                    what I owe, with streaks",
@@ -223,6 +232,16 @@ def build_parser() -> argparse.ArgumentParser:
     note.add_argument("--kind", default="idea", help="card kind for promote (default: idea)")
     note.add_argument("--title", default="", help="override the promoted card title")
     note.add_argument("--replace", action="store_true", help="import: replace the store instead of appending")
+
+    rec = sub.add_parser("rec", help="the rec list: films, series and specials to watch",
+                   formatter_class=argparse.RawDescriptionHelpFormatter)
+    with_examples(rec, "rec", "the rec list: films, series and specials to watch")
+    rec.add_argument("action", nargs="?", default="list", help="list (default) | add | rm | import")
+    rec.add_argument("args", nargs="*", help="text to add, rec id, or a JSON file")
+    rec.add_argument("--from-notes", dest="from_notes", action="store_true",
+                     help="import: take the parked 'Rec List' section out of the notebook")
+    rec.add_argument("--section", "-s", default="Rec List", help="import: notes section to absorb")
+    rec.add_argument("--replace", action="store_true", help="import: replace the list instead of appending")
 
     routine_cmd = sub.add_parser("routine", help="Routine view: activities marked as obligations",
                    formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -657,6 +676,63 @@ def cmd_fin(args) -> int:
     return 0
 
 
+def cmd_rec(args) -> int:
+    action = args.action or "list"
+    if action not in REC_ACTIONS:
+        # `will rec "deliverance (1972)"` - the ergonomic path.
+        args.args = [action, *args.args]
+        action = "add"
+
+    payload = recs.load()
+
+    if action == "add":
+        entry = recs.add(payload, " ".join(args.args).strip())
+        store.save("recs", payload)
+        auto_export(["recs"])
+        print(f"rec {entry['id']}: {entry['text']}")
+        return 0
+
+    if action == "rm":
+        if not args.args:
+            raise SystemExit("usage: will rec rm <id>")
+        entry = recs.remove(payload, int(args.args[0]))
+        store.save("recs", payload)
+        auto_export(["recs"])
+        print(f"removed rec {entry['id']}: {entry['text']}")
+        return 0
+
+    if action == "import":
+        if args.from_notes:
+            notes_payload = notes.load()
+            moved = recs.import_note_lines(payload, notes_payload, args.section)
+            store.save("recs", payload)
+            store.save("notes", notes_payload)
+            auto_export(["recs", "notes"])
+            print(f"moved {moved} lines out of the '{args.section}' notes section")
+            return 0
+        if not args.args:
+            raise SystemExit("usage: will rec import <file.json> | will rec import --from-notes")
+        path = Path(args.args[0]).expanduser()
+        if not path.exists():
+            raise SystemExit(f"no such file: {path}")
+        with path.open(encoding="utf-8") as handle:
+            payload_in = json.load(handle)
+        rows_in = payload_in.get("recommendations") if isinstance(payload_in, dict) else payload_in
+        added = recs.import_rows(payload, rows_in or [], replace=args.replace)
+        store.save("recs", payload)
+        auto_export(["recs"])
+        print(f"imported {added} recs from {path}")
+        return 0
+
+    items = recs.rows(payload)
+    if not items:
+        print("no recs yet")
+        return 0
+    for item in items:
+        print(f"  {item['id']:>3}  {item['text']}  [{item['at'][:10]}]")
+    return 0
+
+
 def cmd_import(args) -> int:
     path = Path(args.file).expanduser()
     if not path.exists():
@@ -689,6 +765,7 @@ def cmd_where(args) -> int:
 
 COMMANDS = {
     "note": cmd_note,
+    "rec": cmd_rec,
     "routine": cmd_routine,
     "done": cmd_done,
     "undo": cmd_undo,

@@ -20,7 +20,7 @@ TERMINAL_STATES = ("done", "skipped")
 LANE_ORDER = ("standup", "comics", "moc", "teacher", "freela")
 CONTENTFLOW_DEFAULT_STORE = Path.home() / ".local" / "share" / "contentflow" / "board.json"
 
-EXPORTERS = ("content", "notes", "routine", "skills", "tasks", "planner", "finance")
+EXPORTERS = ("content", "notes", "recs", "routine", "skills", "tasks", "planner", "finance")
 
 
 def contentflow_store() -> Path:
@@ -141,6 +141,22 @@ def export_notes() -> tuple[str, int]:
         },
     )
     return "notes", total
+
+
+def export_recs() -> tuple[str, int]:
+    from . import recs
+
+    items = recs.rows(recs.load())
+    store.write_render_model(
+        "recs",
+        {
+            "generated_at": store.now_iso(),
+            "source": "will recs store",
+            "count": len(items),
+            "items": items,
+        },
+    )
+    return "recs", len(items)
 
 
 def export_routine() -> tuple[str, int]:
@@ -303,6 +319,7 @@ def export_finance() -> tuple[str, int]:
 DISPATCH = {
     "content": export_content,
     "notes": export_notes,
+    "recs": export_recs,
     "routine": export_routine,
     "skills": export_skills,
     "tasks": export_tasks,
@@ -313,6 +330,7 @@ DISPATCH = {
 UNITS = {
     "content": "cards",
     "notes": "lines",
+    "recs": "recs",
     "routine": "routines",
     "skills": "skills",
     "tasks": "open tasks",
