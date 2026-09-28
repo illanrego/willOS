@@ -73,6 +73,22 @@ def live_day(card: dict) -> str:
     return ""
 
 
+def lane_codes() -> list[str]:
+    """The lane codes contentflow actually has, read from the board itself.
+
+    Never re-declare a lane list: contentflow owns lane identity.
+    """
+    path = contentflow_store()
+    if not path.exists():
+        return []
+    codes: list[str] = []
+    for card in load_cards(path):
+        lane = str(card.get("lane") or "")
+        if lane and lane not in codes:
+            codes.append(lane)
+    return codes
+
+
 def build_content_model(cards: list[dict], with_titles: bool = False) -> dict:
     days: dict[str, dict[str, int]] = {}
     lanes: list[str] = []
@@ -127,7 +143,8 @@ def export_content(with_titles: bool = False) -> tuple[str, int]:
                 counts[lane] = counts.get(lane, 0) + int(count)
     model["week"] = {"start": start, "end": end}
     model["weekly"] = {
-        lane: {"count": counts.get(lane, 0), "minimum": minimums.get(floors, lane)}
+        # a lane is namespaced: `standup` the lane is not `standup` the skill
+        lane: {"count": counts.get(lane, 0), "minimum": minimums.get(floors, minimums.lane_code(lane))}
         for lane in model["lanes"]
     }
 

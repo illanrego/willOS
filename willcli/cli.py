@@ -64,7 +64,8 @@ USAGE_EXAMPLES = {
     "min": [
         "will min                                        this week's floors, and where they live",
         "will min physique 4                             a floor for an activity",
-        "will min teacher 2                              ...or for a content lane",
+        "will min lane:teacher 2                         ...or for a content lane",
+        "will min coding 5                               java/leetcode/studies, per week",
         "will min rm physique                            drop the floor (0 does the same)",
     ],
     "done": [
@@ -434,6 +435,33 @@ def cmd_note(args) -> int:
     raise SystemExit(f"unknown note action: {action}")
 
 
+def _resolve_floor_code(code: str) -> tuple[str, str]:
+    """Turn what he types into a floor key, and a note when it is ambiguous.
+
+    `teacher` can only be a content lane, so a bare `teacher` becomes
+    `lane:teacher` - a bare key would be read by nobody. A word that names BOTH
+    an activity and a lane (`standup`) keeps the activity meaning, and the note
+    tells him to write `lane:standup` for the lane. Guessing the other way is
+    exactly what put the stand-up lane's floor on the stand-up skill.
+    """
+    from . import minimums
+
+    text = str(code or "").strip()
+    if ":" in text:
+        return minimums.normalize_code(text), ""
+    slug = store.slugify(text)
+    if not slug:
+        return "", ""
+    activity_codes = {entry.get("code") for entry in activities.load().get("activities", [])}
+    lane_codes = set(exporter.lane_codes())
+    note = ""
+    if slug in lane_codes and slug in activity_codes:
+        note = f"note: '{slug}' is the skill; the content lane is 'lane:{slug}'"
+    elif slug in lane_codes and slug not in activity_codes:
+        return minimums.lane_code(slug), note
+    return minimums.normalize_code(slug), note
+
+
 def cmd_min(args) -> int:
     """Weekly minimums: the floor a lane or activity owes each week."""
     from . import minimums
@@ -449,9 +477,12 @@ def cmd_min(args) -> int:
     if action == "rm":
         if not args.args:
             raise SystemExit("usage: will min rm <code>")
-        code, _ = minimums.set_minimum(payload, args.args[0], 0)
+        resolved, note = _resolve_floor_code(args.args[0])
+        code, _ = minimums.set_minimum(payload, resolved, 0)
         store.save("minimums", payload)
         auto_export(["skills", "content"])
+        if note:
+            print(note)
         print(f"cleared the weekly floor for '{code}'")
         return 0
 
@@ -462,9 +493,12 @@ def cmd_min(args) -> int:
             value = int(args.args[1])
         except ValueError:
             raise SystemExit(f"not a number: {args.args[1]}")
-        code, amount = minimums.set_minimum(payload, args.args[0], value)
+        resolved, note = _resolve_floor_code(args.args[0])
+        code, amount = minimums.set_minimum(payload, resolved, value)
         store.save("minimums", payload)
         auto_export(["skills", "content"])
+        if note:
+            print(note)
         print(f"'{code}' -> {amount} per week" if amount else f"cleared the weekly floor for '{code}'")
         return 0
 
@@ -475,7 +509,8 @@ def cmd_min(args) -> int:
         return 0
     print(f"week {start} .. {end}")
     for row in rows:
-        print(f"  {row['code']:<16} {row['minimum']}/week")
+        scope = "lane" if row["code"].startswith("lane:") else "skill"
+        print(f"  {row['code']:<18} {row['minimum']}/week   ({scope})")
     return 0
 
 
